@@ -1,0 +1,1686 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>마지막 교실: 좀비 아포칼립스 생존</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#E2E9EC; --panel:#F6F9F9; --ink:#1E2D34; --muted:#5A6A71; --line:#C3CFD4;
+  --exit:#00A651; --exit-deep:#00813F; --alarm:#E5322D; --fire:#F08C00; --survivor:#2F6FB3;
+  --on-exit:#FFFFFF; --shade:rgba(15,27,33,.55);
+  color-scheme:light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#0E191E; --panel:#15232A; --ink:#E1EAED; --muted:#93A5AC; --line:#2B3E46;
+    --exit:#16B862; --exit-deep:#0E8F4B; --shade:rgba(0,0,0,.6); color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0E191E; --panel:#15232A; --ink:#E1EAED; --muted:#93A5AC; --line:#2B3E46;
+  --exit:#16B862; --exit-deep:#0E8F4B; --shade:rgba(0,0,0,.6); color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:inherit}
+html,body{height:100%;margin:0}
+body{background:var(--paper);color:var(--ink);font-family:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",sans-serif;font-size:15px;line-height:1.55;overflow:hidden;-webkit-font-smoothing:antialiased}
+#app{position:relative;width:100%;height:100%;overflow:hidden}
+#world{position:absolute;inset:0;width:100%;height:100%;display:block;background:#DDE5E8}
+button{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--fire);outline-offset:2px}
+
+/* HUD */
+#hud{position:absolute;inset:0;pointer-events:none}
+#hud[hidden]{display:none}
+.panel{position:absolute;background:var(--panel);border:2px solid var(--ink);border-radius:6px;padding:10px 12px;box-shadow:3px 3px 0 var(--ink)}
+#stats{left:14px;top:14px;width:236px}
+.stat{display:grid;grid-template-columns:52px 1fr 34px;align-items:center;gap:8px;font-size:13px;font-weight:600}
+.stat + .stat{margin-top:6px}
+.bar{height:10px;border:1.5px solid var(--ink);border-radius:2px;background:transparent;overflow:hidden}
+.bar i{display:block;height:100%;width:50%;background:var(--exit);transition:width .15s linear}
+.bar.hp i{background:var(--alarm)}
+.bar.food i{background:var(--fire)}
+.val{text-align:right;font-variant-numeric:tabular-nums}
+#mode{margin-top:8px;padding-top:7px;border-top:1.5px dashed var(--line);font-size:12.5px;color:var(--muted);display:flex;justify-content:space-between}
+#mode b{color:var(--ink)}
+#clock{left:50%;top:14px;transform:translateX(-50%);min-width:220px;text-align:center}
+#c-day{font-family:"Black Han Sans","IBM Plex Sans KR",sans-serif;font-size:20px;line-height:1.1}
+#clock .bar{margin:6px 0 4px;height:6px}
+#clock .bar i{background:var(--ink)}
+#c-sub{font-size:12.5px;color:var(--muted)}
+#mini{right:14px;top:14px;padding:6px}
+#minimap{display:block;width:240px;height:165px}
+#bag{left:14px;bottom:14px;display:flex;flex-wrap:wrap;gap:6px;max-width:min(560px,calc(100% - 28px));padding:8px}
+.chip{font-size:12.5px;border:1.5px solid var(--ink);border-radius:3px;padding:2px 7px;white-space:nowrap}
+.chip kbd{font-family:inherit;font-weight:700;background:var(--ink);color:var(--panel);border-radius:2px;padding:0 4px;margin-right:4px;font-size:11.5px}
+.chip.warn{background:var(--alarm);border-color:var(--alarm);color:#fff}
+.chip.good{background:var(--exit);border-color:var(--exit);color:var(--on-exit)}
+#toasts{position:absolute;left:50%;bottom:72px;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:6px;width:min(560px,92%)}
+.toast{background:var(--ink);color:var(--panel);padding:7px 14px;border-radius:4px;font-size:14px;font-weight:600;text-align:center;transition:opacity .4s}
+.toast.bad{background:var(--alarm);color:#fff}
+.toast.good{background:var(--exit);color:var(--on-exit)}
+
+/* Overlays */
+#overlay{position:absolute;inset:0;display:flex;align-items:flex-start;justify-content:center;padding:20px;background:var(--shade);overflow:auto}
+#overlay[hidden]{display:none}
+.card{background:var(--panel);border:2px solid var(--ink);border-radius:8px;box-shadow:6px 6px 0 var(--ink);width:min(640px,100%);margin:auto;padding:24px 26px}
+.card.wide{width:min(1040px,100%)}
+.title-grid{display:grid;grid-template-columns:1.05fr 1fr;gap:10px 28px;align-items:start}
+.title-grid h3:first-child{margin-top:0}
+@media (max-width:860px){.title-grid{grid-template-columns:1fr}}
+@media (max-height:820px){
+  .card{padding:16px 20px}
+  .sign{margin-bottom:10px}
+  .sign svg{width:78px;padding:8px}
+  .sign .t{padding:10px 16px}
+  .sign .t h1{font-size:40px}
+  .cast img{width:38px;height:50px}
+  .card p{margin:4px 0}
+  .keys{font-size:13px;gap:2px 12px}
+  .card h3{margin:10px 0 4px}
+}
+.save-box{border:1.5px dashed var(--ink);border-radius:5px;padding:8px 12px;margin:10px 0;font-size:14px}
+.why{display:inline-block;font-size:11.5px;font-weight:700;border:1.5px solid currentColor;border-radius:3px;padding:0 5px;margin-right:6px;line-height:1.5}
+.rules{list-style:none;margin:6px 0 4px;padding:0;counter-reset:r}
+.rules li{counter-increment:r;position:relative;padding:7px 10px 7px 38px;border:1.5px solid var(--ink);border-radius:5px;margin-top:6px;font-size:14px}
+.rules li::before{content:counter(r);position:absolute;left:9px;top:7px;width:20px;height:20px;border-radius:50%;background:var(--exit);color:var(--on-exit);font-weight:700;font-size:12.5px;display:flex;align-items:center;justify-content:center}
+.rules b{display:block}
+.delta{font-size:12px;font-weight:600;margin-left:4px}
+.delta.up{color:var(--exit-deep)} .delta.down{color:var(--alarm)}
+.card h2{font-family:"Black Han Sans","IBM Plex Sans KR",sans-serif;font-weight:400;font-size:30px;line-height:1.15;margin:0 0 6px}
+.card h3{font-size:15px;margin:18px 0 6px}
+.card p{margin:6px 0;max-width:62ch}
+.muted{color:var(--muted)}
+.lines{margin:8px 0;padding:0;list-style:none}
+.lines li{padding:5px 0;border-bottom:1px dashed var(--line);font-size:14px}
+.lines li.bad{color:var(--alarm);font-weight:600}
+.lines li.good{color:var(--exit-deep);font-weight:600}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .lines li.good{color:var(--exit)}}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin:10px 0}
+.cell{border:1.5px solid var(--ink);border-radius:4px;padding:8px 10px}
+.cell small{display:block;color:var(--muted);font-size:12px}
+.cell b{font-size:19px;font-variant-numeric:tabular-nums}
+.actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+.btn{cursor:pointer;border:2px solid var(--ink);background:var(--panel);border-radius:5px;padding:10px 18px;font-weight:700;box-shadow:3px 3px 0 var(--ink);text-align:left}
+.btn:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+.btn.primary{background:var(--exit);border-color:var(--ink);color:var(--on-exit)}
+.btn small{display:block;font-weight:400;font-size:12.5px;opacity:.85}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.pick{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-top:8px}
+.pick .btn{width:100%}
+.pick .btn[aria-pressed="true"]{background:var(--ink);color:var(--panel)}
+.keys{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:14px;margin:6px 0}
+.keys kbd{font-family:inherit;font-weight:700;border:1.5px solid var(--ink);border-radius:3px;padding:0 6px;justify-self:start;white-space:nowrap}
+
+/* Title sign */
+.sign{display:flex;align-items:stretch;background:var(--exit);color:var(--on-exit);border:3px solid var(--ink);border-radius:8px;box-shadow:6px 6px 0 var(--ink);overflow:hidden;margin-bottom:18px}
+.sign svg{flex:0 0 auto;width:118px;height:auto;background:var(--exit-deep);padding:12px}
+.sign .t{padding:16px 20px;display:flex;flex-direction:column;justify-content:center}
+.sign .t h1{font-family:"Black Han Sans","IBM Plex Sans KR",sans-serif;font-weight:400;font-size:clamp(36px,7vw,58px);line-height:1;margin:0}
+.sign .t span{font-size:14px;font-weight:600;opacity:.92;margin-top:6px}
+.vol{display:grid;grid-template-columns:64px 1fr 36px;align-items:center;gap:10px;margin:6px 0;font-size:14px;font-weight:600}
+.vol input{width:100%;accent-color:var(--exit)}
+.vol output{text-align:right;font-variant-numeric:tabular-nums}
+.check{display:flex;align-items:center;gap:8px;font-size:14px;margin-top:8px}
+.check input{accent-color:var(--exit);width:18px;height:18px;margin:0}
+.cast{display:flex;gap:6px;justify-content:space-between;margin:4px 0 10px;flex-wrap:wrap}
+.cast figure{margin:0;text-align:center;flex:1 1 72px}
+.cast img{width:54px;height:72px;display:block;margin:0 auto 2px}
+.cast figcaption{font-size:13px;font-weight:700;line-height:1.3}
+.cast figcaption small{display:block;font-weight:400;font-size:11.5px;color:var(--muted)}
+.pick .btn{display:grid;grid-template-columns:48px 1fr;gap:10px;align-items:center}
+.pick .btn img{width:48px;height:64px;display:block}
+@media (max-width:640px){
+  #stats{width:200px}
+  #mini{display:none}
+  #clock{top:auto;bottom:66px;left:auto;right:14px;transform:none;min-width:150px}
+}
+@media (prefers-reduced-motion: reduce){.bar i,.toast{transition:none}}
+</style>
+</head>
+<body>
+<div id="app">
+  <canvas id="world" aria-label="학교 대피 안내도 형태의 게임 화면"></canvas>
+  <div id="hud" hidden>
+    <div class="panel" id="stats">
+      <div class="stat"><span>체력</span><div class="bar hp"><i id="b-hp"></i></div><span class="val" id="v-hp"></span></div>
+      <div class="stat"><span>포만감</span><div class="bar food"><i id="b-food"></i></div><span class="val" id="v-food"></span></div>
+      <div class="stat"><span>사기</span><div class="bar"><i id="b-mor"></i></div><span class="val" id="v-mor"></span></div>
+      <div id="mode"><span id="m-mode"></span><span id="m-speed"></span></div>
+    </div>
+    <div class="panel" id="clock"><div id="c-day"></div><div class="bar"><i id="b-time"></i></div><div id="c-sub"></div></div>
+    <div class="panel" id="mini"><canvas id="minimap" width="480" height="330" aria-label="미니맵"></canvas></div>
+    <div class="panel" id="bag"></div>
+    <div id="toasts" aria-live="polite"></div>
+  </div>
+  <div id="overlay" role="dialog" aria-modal="true"></div>
+</div>
+<script>
+(() => {
+'use strict';
+
+/* ---------- 기본 상수 ---------- */
+const TILE = 32;           // 1m = 32px
+const W = 64, H = 44;
+const DAY_LEN = 150;       // 낮 길이(초)
+const END_MIN = 20;        // 이 시간이 지나야 쉘터에서 하루를 마칠 수 있다
+const MAX_DAY = 15;
+const T = { FLOOR:0, WALL:1, GRASS:2, DESK:3, SHELTER:4, DOOR:5, TREE:6, WATER:8, SDOOR:9 };
+const SPEED = { walk:96, run:240, runHungry:170, crouch:55, zWander:40, zTrack:70, zInvest:62, zCharge:150 };
+const CHARGE_MAX = 3.5;   // 좀비 돌진은 3.5초 뒤 지친다
+const PAL = {
+  grass:'#D4E0D3', hatch:'#B6C9B4', floor:'#EEF2F3', corridor:'#E2E9EC', wall:'#22333A',
+  desk:'#CFD9DC', deskLine:'#8697A0', shelter:'#CFEBD9', water:'#B7D5E6', wave:'#86B3CC',
+  tree:'#A9C6A5', treeLine:'#6C8E68', label:'#73858D', track:'#F4F7F7',
+  exit:'#00A651', zombie:'#D8322B', survivor:'#2F6FB3', fire:'#F08C00', ink:'#22333A'
+};
+
+const rand = (a,b) => a + Math.random()*(b-a);
+const ri = (a,b) => Math.floor(rand(a, b+1));
+const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
+const pick = a => a[Math.floor(Math.random()*a.length)];
+const dist = (a,b) => Math.hypot(a.x-b.x, a.y-b.y);
+const $ = s => document.querySelector(s);
+
+/* ---------- 사운드 (Web Audio로 직접 합성, 외부 파일 없음) ---------- */
+const Sound = (() => {
+  const DEF={master:70, music:45, sfx:80, muted:false};
+  let vol; try { vol=Object.assign({}, DEF, JSON.parse(localStorage.getItem('lastclass:audio')||'{}')); } catch(e){ vol={...DEF}; }
+  let ac=null, master, musicBus, sfxBus, nbuf, delay, droneFilter=null, rainSrc=null, rainGain=null;
+  let noteT=0, heartT=0, crackT=0;
+  const save=()=>{ try { localStorage.setItem('lastclass:audio', JSON.stringify(vol)); } catch(e){} };
+  function init(){
+    if (ac){ if (ac.state==='suspended') ac.resume(); return; }
+    const AC=window.AudioContext||window.webkitAudioContext; if (!AC) return;
+    try { ac=new AC(); } catch(e){ ac=null; return; }
+    master=ac.createGain(); musicBus=ac.createGain(); sfxBus=ac.createGain();
+    const comp=ac.createDynamicsCompressor(); master.connect(comp); comp.connect(ac.destination);
+    musicBus.connect(master); sfxBus.connect(master);
+    nbuf=ac.createBuffer(1, ac.sampleRate*2, ac.sampleRate);
+    const d=nbuf.getChannelData(0); for (let i=0;i<d.length;i++) d[i]=Math.random()*2-1;
+    delay=ac.createDelay(1.5); delay.delayTime.value=0.42;
+    const fb=ac.createGain(); fb.gain.value=0.38; const dl=ac.createBiquadFilter(); dl.type='lowpass'; dl.frequency.value=1800;
+    delay.connect(dl); dl.connect(fb); fb.connect(delay); dl.connect(musicBus);
+    apply(); startDrone();
+  }
+  function apply(){
+    if (!ac) return; const t=ac.currentTime;
+    master.gain.setTargetAtTime(vol.muted?0:vol.master/100, t, 0.04);
+    musicBus.gain.setTargetAtTime(vol.music/100*0.7, t, 0.04);
+    sfxBus.gain.setTargetAtTime(vol.sfx/100, t, 0.04);
+  }
+  function set(k,v){ vol[k]=v; apply(); save(); }
+  function out(pan,dest){
+    dest=dest||sfxBus;
+    if (pan && ac.createStereoPanner){ const p=ac.createStereoPanner(); p.pan.value=clamp(pan,-1,1); p.connect(dest); return p; }
+    return dest;
+  }
+  function env(g,t,a,peak,dur){ g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(Math.max(0.0002,peak),t+a); g.gain.exponentialRampToValueAtTime(0.0001,t+dur); }
+  function tone(o){
+    const {f=440,f2,type='sine',dur=.2,gain=.25,a=.005,when=0,pan=0,dest,lp}=o, t=ac.currentTime+when;
+    const osc=ac.createOscillator(); osc.type=type; osc.frequency.setValueAtTime(f,t);
+    if (f2) osc.frequency.exponentialRampToValueAtTime(f2,t+dur);
+    const g=ac.createGain(); env(g,t,a,gain,dur);
+    let n=osc; if (lp){ const fl=ac.createBiquadFilter(); fl.type='lowpass'; fl.frequency.value=lp; osc.connect(fl); n=fl; }
+    n.connect(g); g.connect(out(pan,dest)); osc.start(t); osc.stop(t+dur+.05);
+  }
+  function noise(o){
+    const {dur=.2,gain=.25,f=1000,f2,q=1,type='bandpass',a=.005,when=0,pan=0,dest}=o, t=ac.currentTime+when;
+    const s=ac.createBufferSource(); s.buffer=nbuf;
+    const fl=ac.createBiquadFilter(); fl.type=type; fl.frequency.setValueAtTime(f,t); if (f2) fl.frequency.exponentialRampToValueAtTime(f2,t+dur); fl.Q.value=q;
+    const g=ac.createGain(); env(g,t,a,gain,dur);
+    s.connect(fl); fl.connect(g); g.connect(out(pan,dest)); s.start(t, Math.random()*1.5); s.stop(t+dur+.05);
+  }
+  const FX={
+    ui:()=>tone({f:620,dur:.06,gain:.12,type:'triangle'}),
+    step:o=>noise({f:o.run?520:380,type:'lowpass',dur:o.run?.08:.06,gain:o.run?.22:.1,q:.7}),
+    splash:()=>noise({f:900,f2:300,dur:.25,gain:.2,q:.8}),
+    pickup:()=>{ tone({f:660,dur:.12,gain:.16,type:'triangle'}); tone({f:990,dur:.18,gain:.14,type:'triangle',when:.08}); },
+    heal:()=>{ [523,659,880].forEach((f,i)=>tone({f,dur:.25,gain:.13,type:'triangle',when:i*.07})); },
+    hit:()=>{ tone({f:140,f2:45,dur:.3,gain:.5}); noise({f:500,type:'lowpass',dur:.18,gain:.35}); },
+    alert:o=>tone({f:260,f2:820,dur:.28,gain:.09,type:'sawtooth',lp:1800,pan:o.pan}),
+    groan:o=>{
+      const t=ac.currentTime, osc=ac.createOscillator(); osc.type='sawtooth';
+      const base=rand(70,105); osc.frequency.setValueAtTime(base,t); osc.frequency.linearRampToValueAtTime(base*0.75,t+1);
+      const lfo=ac.createOscillator(); lfo.frequency.value=rand(5,8); const lg=ac.createGain(); lg.gain.value=6; lfo.connect(lg); lg.connect(osc.frequency);
+      const fl=ac.createBiquadFilter(); fl.type='lowpass'; fl.frequency.value=o.muffled?260:520; fl.Q.value=4;
+      const g=ac.createGain(); env(g,t,.15,.14*o.v,1.05);
+      osc.connect(fl); fl.connect(g); g.connect(out(o.pan)); osc.start(t); lfo.start(t); osc.stop(t+1.1); lfo.stop(t+1.1);
+    },
+    scream:o=>{ noise({f:1800,f2:2800,q:4,dur:.9,gain:.3,pan:o.pan}); tone({f:980,f2:1350,type:'square',dur:.85,gain:.06,lp:3000,pan:o.pan}); },
+    yell:()=>{ tone({f:190,f2:120,type:'sawtooth',dur:.55,gain:.14,lp:900}); noise({f:700,dur:.4,gain:.12}); },
+    alarm:o=>{ for (let i=0;i<3;i++) tone({f:1250,type:'square',dur:.07,gain:.07*o.v,when:i*.13,lp:3500,pan:o.pan}); },
+    torch:()=>noise({f:300,f2:2400,type:'bandpass',q:.8,dur:.45,gain:.22,a:.05}),
+    crackle:()=>noise({f:2500,type:'highpass',dur:.025,gain:rand(.03,.08)}),
+    night:()=>{ tone({f:98,dur:3,gain:.32,a:.3,dest:musicBus}); tone({f:73.4,dur:3.5,gain:.25,a:.4,dest:musicBus}); },
+    dawn:()=>{ [392,523,659].forEach((f,i)=>tone({f,dur:.6,gain:.12,type:'triangle',when:i*.12,dest:musicBus})); },
+    rescue:()=>{ [523,659,784,1047].forEach((f,i)=>tone({f,dur:.4,gain:.12,type:'triangle',when:i*.09})); },
+    radio:()=>{ noise({f:2000,q:.5,dur:.9,gain:.14}); [0,.25,.5].forEach(w=>tone({f:880,type:'square',dur:.08,gain:.05,when:.3+w,lp:2500})); },
+    eat:()=>{ for (let i=0;i<3;i++) noise({f:1200,q:2,dur:.05,gain:.15,when:i*.11}); },
+    heart:o=>{ tone({f:62,dur:.13,gain:.38*o.v,lp:200}); tone({f:55,dur:.16,gain:.3*o.v,lp:200,when:.17}); },
+    end:()=>tone({f:220,f2:110,dur:2.4,gain:.2,type:'triangle',dest:musicBus}),
+    win:()=>{ [523,659,784,1047,1319].forEach((f,i)=>tone({f,dur:.7,gain:.12,type:'triangle',when:i*.15,dest:musicBus})); }
+  };
+  function play(name,o={}){ if (!ac || vol.muted) return; try { FX[name] && FX[name](o); } catch(e){} }
+  function startDrone(){
+    droneFilter=ac.createBiquadFilter(); droneFilter.type='lowpass'; droneFilter.frequency.value=380; droneFilter.Q.value=2;
+    const g=ac.createGain(); g.gain.value=0.09; droneFilter.connect(g); g.connect(musicBus);
+    [[55,'sine'],[82.4,'triangle'],[110.6,'sine']].forEach(([f,type])=>{ const o=ac.createOscillator(); o.type=type; o.frequency.value=f; o.detune.value=rand(-8,8); o.connect(droneFilter); o.start(); });
+    const lfo=ac.createOscillator(); lfo.frequency.value=0.05; const lg=ac.createGain(); lg.gain.value=160; lfo.connect(lg); lg.connect(droneFilter.frequency); lfo.start();
+  }
+  const SC_DAY=[220,261.6,293.7,329.6,392,440,523.3], SC_NIGHT=[110,130.8,146.8,164.8,196,220];
+  function tick(dt,c){
+    if (!ac) return;
+    setRain(c.rain && !vol.muted);
+    if (vol.muted) return;
+    noteT-=dt;
+    if (noteT<=0){
+      noteT=c.night?rand(2.6,4.5):rand(1.6,3.4);
+      const f=pick(c.night?SC_NIGHT:SC_DAY);
+      tone({f,dur:2.2,gain:.06,type:'triangle',a:.03,dest:delay}); tone({f,dur:2.2,gain:.05,type:'triangle',a:.03,dest:musicBus});
+      if (Math.random()<.35) tone({f:f*1.5,dur:1.8,gain:.03,when:.25,dest:delay});
+    }
+    if (droneFilter) droneFilter.Q.value=c.night?6:2;
+    if (c.danger>0){ heartT-=dt; if (heartT<=0){ heartT=1.1-c.danger*0.6; play('heart',{v:0.4+c.danger*0.6}); } } else heartT=0;
+    if (c.torch){ crackT-=dt; if (crackT<=0){ crackT=rand(.05,.18); play('crackle'); } }
+  }
+  function setRain(on){
+    if (!ac) return;
+    if (on && !rainSrc){
+      rainSrc=ac.createBufferSource(); rainSrc.buffer=nbuf; rainSrc.loop=true;
+      const fl=ac.createBiquadFilter(); fl.type='lowpass'; fl.frequency.value=1400;
+      rainGain=ac.createGain(); rainGain.gain.value=0.0001; rainGain.gain.setTargetAtTime(0.09,ac.currentTime,.5);
+      rainSrc.connect(fl); fl.connect(rainGain); rainGain.connect(sfxBus); rainSrc.start();
+    } else if (!on && rainSrc){
+      const src=rainSrc; rainGain.gain.setTargetAtTime(0.0001,ac.currentTime,.3);
+      setTimeout(()=>{ try { src.stop(); } catch(e){} }, 1200); rainSrc=null;
+    }
+  }
+  return {init, play, set, tick, vol:()=>vol};
+})();
+
+
+/* ---------- 맵 ---------- */
+const ROOMS = [
+  {name:'1-1 교실',x0:26,y0:4,x1:34,y1:12,furn:1},
+  {name:'1-2 교실',x0:34,y0:4,x1:42,y1:12,furn:1},
+  {name:'과학실',x0:44,y0:4,x1:53,y1:12,furn:1},
+  {name:'방송실',x0:53,y0:4,x1:61,y1:12,furn:0},
+  {name:'보건실',x0:26,y0:12,x1:34,y1:20,furn:1},
+  {name:'2-1 교실',x0:34,y0:12,x1:42,y1:20,furn:1},
+  {name:'2-2 교실',x0:44,y0:12,x1:53,y1:20,furn:1},
+  {name:'창고',x0:53,y0:12,x1:61,y1:20,furn:1},
+  {name:'급식실',x0:26,y0:23,x1:42,y1:31,furn:1},
+  {name:'도서관',x0:44,y0:23,x1:61,y1:31,furn:1},
+  {name:'교무실',x0:26,y0:31,x1:34,y1:39,furn:1},
+  {name:'3-1 교실',x0:34,y0:31,x1:42,y1:39,furn:1},
+  {name:'화장실',x0:44,y0:31,x1:50,y1:39,furn:0},
+  {name:'3-2 교실',x0:50,y0:31,x1:61,y1:39,furn:1}
+];
+const DOORS = [[34,8],[30,12],[42,8],[44,8],[53,8],[57,12],[30,20],[38,20],[42,16],[44,16],[48,20],[57,20],
+  [30,23],[38,23],[42,27],[44,27],[52,23],[30,31],[38,31],[42,35],[44,35],[50,35],[55,31],
+  [26,21],[26,22],[43,4],[43,39],[61,21],[61,22]];
+const TREES = [[22,19],[23,24],[2,32],[15,34],[16,39],[21,40],[2,41],[22,28],[18,20],[3,18],[12,42]];
+const SHELTER_DOOR = {x:12*TILE, y:17.5*TILE};
+const START = {x:12*TILE, y:14*TILE};
+const RADIO = {x:58.5*TILE, y:7.5*TILE};
+const GUARD = {x:21.5*TILE, y:34.5*TILE};
+const YEWON = {x:7.6*TILE, y:11*TILE};
+
+let map = [];
+function buildMap(){
+  map = [];
+  for (let y=0;y<H;y++) map.push(new Array(W).fill(T.GRASS));
+  for (let x=0;x<W;x++){ map[0][x]=T.WALL; map[H-1][x]=T.WALL; }
+  for (let y=0;y<H;y++){ map[y][0]=T.WALL; map[y][W-1]=T.WALL; }
+  for (let y=4;y<=39;y++) for (let x=26;x<=61;x++) map[y][x]=T.WALL;
+  for (const r of ROOMS) for (let y=r.y0+1;y<r.y1;y++) for (let x=r.x0+1;x<r.x1;x++) map[y][x]=T.FLOOR;
+  for (let x=27;x<=60;x++){ map[21][x]=T.FLOOR; map[22][x]=T.FLOOR; }
+  for (let y=5;y<=38;y++) map[y][43]=T.FLOOR;
+  for (const [x,y] of DOORS) map[y][x]=T.DOOR;
+  const nearDoor = (x,y) => DOORS.some(([dx,dy]) => Math.abs(dx-x)<=1 && Math.abs(dy-y)<=1);
+  for (const r of ROOMS){
+    if (!r.furn) continue;
+    for (let y=r.y0+2;y<=r.y1-2;y+=2) for (let x=r.x0+2;x<=r.x1-2;x+=2)
+      if (map[y][x]===T.FLOOR && !nearDoor(x,y)) map[y][x]=T.DESK;
+  }
+  // 체육관(쉘터)
+  for (let y=4;y<=16;y++) for (let x=4;x<=20;x++) map[y][x]=(y===4||y===16||x===4||x===20)?T.WALL:T.SHELTER;
+  map[16][11]=T.SDOOR; map[16][12]=T.SDOOR;
+  // 경비실
+  for (let y=30;y<=37;y++) for (let x=18;x<=24;x++) map[y][x]=(y===30||y===37||x===18||x===24)?T.WALL:T.FLOOR;
+  map[33][18]=T.DOOR; map[34][24]=T.DOOR;
+  // 연못
+  for (let y=33;y<=41;y++) for (let x=3;x<=13;x++){
+    const dx=(x-8)/4.6, dy=(y-37)/3.2;
+    if (dx*dx+dy*dy<1) map[y][x]=T.WATER;
+  }
+  for (const [x,y] of TREES) if (map[y][x]===T.GRASS) map[y][x]=T.TREE;
+}
+const tileAt = (tx,ty) => (tx<0||ty<0||tx>=W||ty>=H) ? T.WALL : map[ty][tx];
+const tileOf = (x,y) => tileAt(Math.floor(x/TILE), Math.floor(y/TILE));
+const solidP = t => t===T.WALL || t===T.DESK || t===T.TREE;
+const solidZ = t => t===T.WALL || t===T.DESK || t===T.TREE || t===T.WATER || t===T.SHELTER || t===T.SDOOR;
+const inBuilding = (x,y) => x>=26 && x<=61 && y>=4 && y<=39;
+const isCorridor = (x,y) => ((y===21||y===22) && x>=27 && x<=60) || (x===43 && y>=5 && y<=38);
+const roomAt = (tx,ty) => ROOMS.find(r => tx>r.x0 && tx<r.x1 && ty>r.y0 && ty<r.y1);
+
+function collides(x,y,r,solid){
+  const x0=Math.floor((x-r)/TILE), x1=Math.floor((x+r)/TILE), y0=Math.floor((y-r)/TILE), y1=Math.floor((y+r)/TILE);
+  for (let ty=y0;ty<=y1;ty++) for (let tx=x0;tx<=x1;tx++){
+    const t=tileAt(tx,ty);
+    if (!solid(t)) continue;
+    // 책상·나무는 그림 크기만큼만 막는다
+    let ax=tx*TILE, ay=ty*TILE, bx=ax+TILE, by=ay+TILE;
+    if (t===T.DESK){ ax+=4; bx-=4; ay+=7; by-=7; }
+    else if (t===T.TREE){ ax+=7; bx-=7; ay+=7; by-=7; }
+    const cx=clamp(x,ax,bx), cy=clamp(y,ay,by);
+    if ((x-cx)*(x-cx)+(y-cy)*(y-cy) < r*r) return true;
+  }
+  return false;
+}
+function moveEnt(e,dx,dy,solid){
+  const ox=e.x, oy=e.y;
+  // 이미 겹쳐 있으면 빠져나오는 방향으로는 움직일 수 있게 한다
+  if (collides(e.x,e.y,e.r,solid)){ e.x+=dx; e.y+=dy; return Math.hypot(dx,dy); }
+  if (!collides(e.x+dx,e.y,e.r,solid)) e.x+=dx;
+  if (!collides(e.x,e.y+dy,e.r,solid)) e.y+=dy;
+  return Math.hypot(e.x-ox, e.y-oy);
+}
+// 벽은 소리·냄새를 막는다
+function blocked(x0,y0,x1,y1){
+  const d=Math.hypot(x1-x0,y1-y0), n=Math.ceil(d/8);
+  for (let i=1;i<n;i++){
+    if (tileOf(x0+(x1-x0)*i/n, y0+(y1-y0)*i/n)===T.WALL) return true;
+  }
+  return false;
+}
+// 좀비 길찾기(BFS)
+function flowFrom(tx,ty){
+  const d=new Int16Array(W*H).fill(-1), q=new Int32Array(W*H);
+  let h=0,t=0; const s=ty*W+tx; d[s]=0; q[t++]=s;
+  while (h<t){
+    const c=q[h++], cx=c%W, cy=(c/W)|0;
+    for (const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){
+      const nx=cx+dx, ny=cy+dy; if (nx<0||ny<0||nx>=W||ny>=H) continue;
+      const ni=ny*W+nx; if (d[ni]>=0 || solidZ(map[ny][nx])) continue;
+      d[ni]=d[c]+1; q[t++]=ni;
+    }
+  }
+  return d;
+}
+function flowStep(e,d){
+  const tx=Math.floor(e.x/TILE), ty=Math.floor(e.y/TILE), cur=d[ty*W+tx];
+  if (cur<=0) return null;
+  let best=cur, bx=0, by=0;
+  for (let dy=-1;dy<=1;dy++) for (let dx=-1;dx<=1;dx++){
+    if (!dx && !dy) continue;
+    const nx=tx+dx, ny=ty+dy; if (nx<0||ny<0||nx>=W||ny>=H) continue;
+    const v=d[ny*W+nx]; if (v<0 || v>=best) continue;
+    if (dx && dy && (solidZ(map[ty][nx]) || solidZ(map[ny][tx]))) continue;
+    best=v; bx=dx; by=dy;
+  }
+  if (best===cur) return null;
+  return {x:(tx+bx+0.5)*TILE, y:(ty+by+0.5)*TILE};
+}
+const flowCache = new Map();
+function flowTo(x,y){
+  const tx=clamp(Math.floor(x/TILE),0,W-1), ty=clamp(Math.floor(y/TILE),0,H-1), k=ty*W+tx;
+  const c=flowCache.get(k);
+  if (c && gameTime-c.t<4) return c.d;
+  const d=flowFrom(tx,ty); flowCache.set(k,{d,t:gameTime}); return d;
+}
+
+/* ---------- 정적 맵 그리기 ---------- */
+let mapCanvas, miniBase;
+function renderStatic(){
+  mapCanvas=document.createElement('canvas'); mapCanvas.width=W*TILE; mapCanvas.height=H*TILE;
+  const g=mapCanvas.getContext('2d');
+  g.fillStyle=PAL.grass; g.fillRect(0,0,mapCanvas.width,mapCanvas.height);
+  // 운동장 트랙
+  g.strokeStyle=PAL.track; g.lineWidth=3;
+  for (const o of [0,22]){
+    roundRect(g, 3*TILE+o, 19*TILE+o, 14*TILE-2*o, 11*TILE-2*o, 5*TILE-o); g.stroke();
+  }
+  for (let y=0;y<H;y++) for (let x=0;x<W;x++){
+    const t=map[y][x], X=x*TILE, Y=y*TILE;
+    if (t===T.GRASS || t===T.TREE){
+      if ((x*7+y*13)%5===0){ g.strokeStyle=PAL.hatch; g.lineWidth=1.2; g.beginPath(); g.moveTo(X+8,Y+22); g.lineTo(X+12,Y+13); g.moveTo(X+18,Y+25); g.lineTo(X+21,Y+16); g.stroke(); }
+    } else if (t===T.FLOOR || t===T.DOOR || t===T.DESK){
+      g.fillStyle=(inBuilding(x,y)&&isCorridor(x,y))?PAL.corridor:PAL.floor; g.fillRect(X,Y,TILE,TILE);
+      if (!isCorridor(x,y)){ g.strokeStyle='rgba(34,51,58,.05)'; g.lineWidth=1; g.strokeRect(X+.5,Y+.5,TILE-1,TILE-1); }
+    } else if (t===T.SHELTER || t===T.SDOOR){
+      g.fillStyle=PAL.shelter; g.fillRect(X,Y,TILE,TILE);
+    } else if (t===T.WATER){
+      g.fillStyle=PAL.water; g.fillRect(X,Y,TILE,TILE);
+      g.strokeStyle=PAL.wave; g.lineWidth=1.5; g.beginPath(); g.moveTo(X+5,Y+14); g.quadraticCurveTo(X+11,Y+9,X+17,Y+14); g.quadraticCurveTo(X+23,Y+19,X+28,Y+14); g.stroke();
+    }
+  }
+  // 벽
+  g.fillStyle=PAL.wall;
+  for (let y=0;y<H;y++) for (let x=0;x<W;x++){
+    if (map[y][x]!==T.WALL) continue;
+    const edge = x===0||y===0||x===W-1||y===H-1;
+    if (edge){ g.fillStyle='#7F9098'; g.fillRect(x*TILE+10,y*TILE+10,12,12); g.fillStyle=PAL.wall; }
+    else g.fillRect(x*TILE,y*TILE,TILE,TILE);
+  }
+  // 울타리 선
+  g.strokeStyle='#7F9098'; g.lineWidth=2; g.setLineDash([6,5]);
+  g.strokeRect(16,16,W*TILE-32,H*TILE-32); g.setLineDash([]);
+  // 책상
+  for (let y=0;y<H;y++) for (let x=0;x<W;x++){
+    const t=map[y][x], X=x*TILE, Y=y*TILE;
+    if (t===T.DESK){
+      g.fillStyle=PAL.desk; g.strokeStyle=PAL.deskLine; g.lineWidth=1.5;
+      g.fillRect(X+4,Y+7,24,18); g.strokeRect(X+4.5,Y+7.5,23,17);
+    } else if (t===T.TREE){
+      g.fillStyle=PAL.tree; g.strokeStyle=PAL.treeLine; g.lineWidth=1.5;
+      g.beginPath(); g.arc(X+16,Y+16,14,0,Math.PI*2); g.fill(); g.stroke();
+      g.beginPath(); g.arc(X+16,Y+16,5,0,Math.PI*2); g.stroke();
+    } else if (t===T.DOOR || t===T.SDOOR){
+      g.strokeStyle=t===T.SDOOR?PAL.exit:PAL.deskLine; g.lineWidth=1.5;
+      const vert = solidP(tileAt(x,y-1)) && solidP(tileAt(x,y+1));
+      g.beginPath();
+      if (vert){ g.moveTo(X+16,Y); g.lineTo(X+16+TILE*.8,Y+2); g.moveTo(X+16+TILE*.8,Y); g.arc(X+16,Y,TILE*.8,0,Math.PI/2); }
+      else { g.moveTo(X,Y+16); g.lineTo(X+2,Y+16+TILE*.8); g.moveTo(X+TILE*.8,Y+16); g.arc(X,Y+16,TILE*.8,0,Math.PI/2); }
+      g.stroke();
+    }
+  }
+  // 라벨
+  g.textBaseline='top'; g.fillStyle=PAL.label; g.font='600 13px "IBM Plex Sans KR", sans-serif';
+  for (const r of ROOMS) g.fillText(r.name, r.x0*TILE+TILE+4, r.y0*TILE+TILE+3);
+  g.fillText('경비실', 18*TILE+TILE+4, 30*TILE+TILE+3);
+  g.fillText('복도', 48*TILE, 21*TILE+12);
+  g.fillText('연못', 7*TILE+4, 36*TILE+10);
+  g.font='400 15px "Black Han Sans", sans-serif'; g.fillStyle='rgba(115,133,141,.75)';
+  g.fillText('운동장', 8*TILE, 24*TILE);
+  g.fillStyle=PAL.exit; g.font='400 18px "Black Han Sans", sans-serif';
+  g.fillText('쉘터 (체육관)', 5*TILE+8, 5*TILE+6);
+  // 매트
+  g.strokeStyle='rgba(0,166,81,.45)'; g.lineWidth=2;
+  for (let i=0;i<4;i++) g.strokeRect((6+i*3.5)*TILE, 8*TILE, 2.6*TILE, 4.5*TILE);
+  // 미니맵 바탕
+  miniBase=document.createElement('canvas'); miniBase.width=W*3; miniBase.height=H*3;
+  const m=miniBase.getContext('2d');
+  for (let y=0;y<H;y++) for (let x=0;x<W;x++){
+    const t=map[y][x];
+    m.fillStyle = t===T.WALL?'#22333A' : t===T.SHELTER||t===T.SDOOR?'#7CCB9C' : t===T.WATER?'#86B3CC' : t===T.GRASS||t===T.TREE?'#C6D6C4' : '#EEF2F3';
+    m.fillRect(x*3,y*3,3,3);
+  }
+}
+function roundRect(g,x,y,w,h,r){ g.beginPath(); g.moveTo(x+r,y); g.arcTo(x+w,y,x+w,y+h,r); g.arcTo(x+w,y+h,x,y+h,r); g.arcTo(x,y+h,x,y,r); g.arcTo(x,y,x+w,y,r); g.closePath(); }
+
+/* ---------- 게임 상태 ---------- */
+const ITEMS = {
+  medkit:{name:'구급상자', glyph:'+', color:'#D8322B'},
+  bandage:{name:'붕대', glyph:'+', color:'#E77B77'},
+  can:{name:'통조림', glyph:'식', color:'#C97A12'},
+  bar:{name:'에너지바', glyph:'바', color:'#D99A2B'},
+  torch:{name:'횃불', glyph:'불', color:'#F08C00'},
+  alarm:{name:'알람시계', glyph:'알', color:'#2F6FB3'},
+  perfume:{name:'향수', glyph:'향', color:'#9A5BC0'},
+  wood:{name:'자재', glyph:'재', color:'#8A6A44'},
+  shoes:{name:'운동화', glyph:'신', color:'#00A651'},
+  part:{name:'무전기 부품', glyph:'부', color:'#22333A'},
+  vaccine:{name:'치료제', glyph:'약', color:'#00A651'}
+};
+const ITEM_POOL = [['medkit',6],['bandage',10],['can',12],['bar',10],['torch',9],['alarm',7],['perfume',4],['wood',9]];
+const NAMES = ['민지','도윤','서연','하준','지우','태민','유나','건우','소율','재희','나은','시우','다온','현우','채린','주원','윤슬','승호'];
+const STAGES = ['없음','안정','결속','단합'];
+const STAGE_DESC = ['연속으로 사기를 지키면 단계가 오른다','사기 감소 완화, 바리케이드 수리 +1','공짜 사기 회복 해금, 출발 사기 +5','밤 습격 -30%, 달리기 배고픔 -20%'];
+const WEATHER = {clear:'맑음', rain:'비', heat:'폭염'};
+
+/* ---------- 캐릭터 스프라이트 (SVG로 그린 캐릭터 이미지) ---------- */
+const CAST = {
+  hyunse:  {name:'현세', role:'주인공, 육상 상비군', skin:'#F2C9A0', hair:'#1E1E22', hairStyle:'short', top:'#00A651', top2:'#FFFFFF', bottom:'#1F3A5F', shoe:'#F08C00', extra:'bib'},
+  yewon:   {name:'예원', role:'쉘터의 리더', skin:'#F5D0AE', hair:'#3A2418', hairStyle:'ponytail', top:'#22385E', top2:'#D8322B', bottom:'#3E4E6A', shoe:'#2A2A2A', extra:'ribbon', skirt:true},
+  hyunsung:{name:'현성', role:'학교 경비', skin:'#E5B98F', hair:'#2A2A2A', hairStyle:'cap', top:'#2B3F5C', top2:'#F2C230', bottom:'#24324A', shoe:'#1B1B1B', extra:'badge'},
+  jihwan:  {name:'지환', role:'수학 선생님', skin:'#EFC39B', hair:'#4A3424', hairStyle:'messy', top:'#A9CBEA', top2:'#2F4A6B', bottom:'#4A4A52', shoe:'#5A3A22', extra:'glasses'},
+  sujin:   {name:'수진', role:'겁 많은 학생', skin:'#F7D6B8', hair:'#2B1B14', hairStyle:'bob', top:'#22385E', top2:'#E8A33D', bottom:'#3E4E6A', shoe:'#2A2A2A', extra:'ribbon', skirt:true, scared:true}
+};
+const SURV_LOOKS = [
+  {skin:'#F0C8A0', hair:'#2A1E18', hairStyle:'short', top:'#7A5BA6', bottom:'#3A3A48', shoe:'#EDEDED'},
+  {skin:'#E8BC94', hair:'#5A3A22', hairStyle:'long', top:'#C0533A', bottom:'#3E4E6A', shoe:'#2A2A2A'},
+  {skin:'#F3D1B0', hair:'#1E1E22', hairStyle:'messy', top:'#3E8E7E', bottom:'#2F3640', shoe:'#8A6A44'},
+  {skin:'#DDB08A', hair:'#8C8C8C', hairStyle:'bald', top:'#B08A2E', bottom:'#4A4A52', shoe:'#3A2A1E'},
+  {skin:'#F5D3B5', hair:'#3A2418', hairStyle:'bob', top:'#5C6B7A', bottom:'#22385E', shoe:'#2A2A2A', skirt:true}
+];
+const ZOMBIE_LOOKS = [
+  {hair:'#2A2A2A', hairStyle:'messy', top:'#3D4F6E', bottom:'#2E3A50', shoe:'#2A2A2A'},
+  {hair:'#3A2418', hairStyle:'long', top:'#22385E', bottom:'#3E4E6A', shoe:'#2A2A2A', skirt:true},
+  {hair:'#555', hairStyle:'bald', top:'#B9BDB4', bottom:'#4A4A52', shoe:'#3A2A1E'},
+  {hair:'#1E1E22', hairStyle:'short', top:'#8E3B3B', bottom:'#1F2A3A', shoe:'#D0D0D0'}
+];
+function hairSVG(style,color,cap){
+  switch (style){
+    case 'cap': return `<path d="M15 15 L15 22 L18 22 L18 15 Z" fill="${color}"/><path d="M14.5 15 Q15 5 26 5 Q35 6 35.5 13 Z" fill="${cap}"/><path d="M33 11.5 L42 13 L33 15 Z" fill="${cap}"/><rect x="23" y="7" width="4" height="4" rx="1" fill="#F2C230"/>`;
+    case 'ponytail': return `<path d="M16 14 Q7 17 9.5 31 Q13 25 18 20 Z" fill="${color}"/><path d="M15 20 Q14 5 26 5 Q36 6 35 15 Q30 10 22 12 L19 20 Z" fill="${color}"/><circle cx="16" cy="14.5" r="2.4" fill="#D8322B"/>`;
+    case 'bob': return `<path d="M14 26 Q11 5 26 5 Q37 6 35.5 16 Q30 10 22 12 L20.5 27 Z" fill="${color}"/>`;
+    case 'messy': return `<path d="M15 20 Q14 6 25 5 Q35 5 35 14 Q30 10 21 12 L18 20 Z" fill="${color}"/><path d="M16 9 L13 4 L19 6 L21 1.5 L25 5 L29 1.5 L30 5.5 L36 4.5 L34 9 Z" fill="${color}"/>`;
+    case 'long': return `<path d="M13 33 Q10 5 26 5 Q37 6 35.5 16 Q30 10 22 12 L19 33 Z" fill="${color}"/>`;
+    case 'bald': return `<path d="M16 13 Q24 6 34 10" stroke="${color}" stroke-width="2.4" fill="none"/>`;
+    default: return `<path d="M15 20 Q14 5 26 5 Q36 6 35 14 Q30 10 21 12 L18 20 Z" fill="${color}"/>`;
+  }
+}
+function spriteSVG(c, frame){
+  const z=!!c.zombie, sk=z?'#9DB18F':c.skin, leg=c.skirt?'#2B2B36':c.bottom;
+  const LEG=[[[22,61],[27,61]],[[31,60],[16,60]],[[17,60],[31,60]]][frame];
+  let ARM;
+  if (z) ARM=[[39,30],[41,34]];
+  else if (c.scared && frame===0) ARM=[[29,25],[31,24]];
+  else ARM=[[[21,44],[27,44]],[[16,41],[32,40]],[[32,40],[16,41]]][frame];
+  const legSVG=(i,dim)=>{ const hx=i?27:22, [fx,fy]=LEG[i]; return `<g${dim?' opacity=".82"':''}><path d="M${hx} 45 L${fx} ${fy-3}" stroke="${leg}" stroke-width="6.5" stroke-linecap="round"/><ellipse cx="${fx+1.5}" cy="${fy-1.2}" rx="4.6" ry="2.6" fill="${c.shoe}"/></g>`; };
+  const armSVG=(i,dim)=>{ const [hx,hy]=ARM[i]; return `<g${dim?' opacity=".82"':''}><path d="M24 31 L${hx} ${hy}" stroke="${c.top}" stroke-width="5.5" stroke-linecap="round"/><circle cx="${hx}" cy="${hy}" r="2.8" fill="${sk}"/></g>`; };
+  let extra='', face='';
+  if (c.extra==='bib') extra=`<rect x="19" y="32" width="11" height="9" rx="1.5" fill="#fff"/><text x="24.5" y="39.6" font-size="8" font-weight="700" text-anchor="middle" fill="#00813F" font-family="Arial,sans-serif">7</text>`;
+  if (c.extra==='badge') extra=`<path d="M27 32 l2 1.4 l2 -1.4 v3 l-2 1.6 l-2 -1.6 z" fill="#F2C230"/><path d="M17 29.5 h15" stroke="#1A2638" stroke-width="2"/>`;
+  if (c.extra==='ribbon') extra=`<path d="M21 28 L24.5 30.5 L28 28 L28 32 L24.5 30.5 L21 32 Z" fill="${c.top2}"/>`;
+  if (c.extra==='glasses') extra=`<path d="M24 28.5 L26 28.5 L26.6 40 L25 42 L23.4 40 Z" fill="${c.top2}"/>`;
+  if (z){
+    extra+=`<circle cx="20" cy="37" r="2.6" fill="#6B2A26" opacity=".75"/><circle cx="28.5" cy="42.5" r="1.8" fill="#6B2A26" opacity=".7"/><path d="M16.5 46 l3 -3 l2 3 l3 -3 l3 3 l3 -3 l2 3" stroke="${c.top}" stroke-width="2" fill="none"/>`;
+    face=`<circle cx="30" cy="17" r="2.5" fill="#F4F4EE" stroke="#6A7A62" stroke-width=".8"/><path d="M27.5 23 Q31 21.4 34.5 23.6" stroke="#4A3030" stroke-width="1.6" fill="none"/><path d="M20 12 l2 3" stroke="#6B2A26" stroke-width="1.2"/>`;
+  } else {
+    face=`<circle cx="30.5" cy="17.5" r="1.7" fill="#1E1E22"/>` + (c.scared
+      ? `<path d="M29.5 24 q1.6 -1.6 3.2 0" stroke="#7A3A3A" stroke-width="1.2" fill="none"/><path d="M28 13.5 l4.5 -1" stroke="#2B1B14" stroke-width="1.1"/>`
+      : `<path d="M29.5 23 q2 1.3 3.6 0" stroke="#7A3A3A" stroke-width="1.2" fill="none"/>`);
+    if (c.extra==='glasses') face+=`<circle cx="30" cy="17.5" r="3.5" fill="none" stroke="#1E1E22" stroke-width="1.3"/><path d="M26.5 17 L21.5 16" stroke="#1E1E22" stroke-width="1.1"/>`;
+    if (c.extra==='bib') face+=`<path d="M15 12.5 Q25 8 35.5 12" stroke="#fff" stroke-width="3" fill="none"/>`;
+  }
+  const torso=`<rect x="16" y="27" width="17" height="20" rx="6" fill="${c.top}"/>`;
+  const skirt=c.skirt?`<path d="M15.5 41 L33.5 41 L36 51 L13 51 Z" fill="${c.bottom}"/>`:'';
+  const head=`<circle cx="25" cy="17" r="10" fill="${sk}"/><circle cx="21" cy="18.5" r="2.2" fill="${sk}" stroke="rgba(0,0,0,.14)"/>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 64" width="48" height="64">${armSVG(0,1)}${legSVG(0,1)}${legSVG(1)}${torso}${skirt}${extra}${armSVG(1)}${head}${hairSVG(c.hairStyle,c.hair,c.top)}${face}</svg>`;
+}
+const svgURL = s => 'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(s);
+const SPR = {};
+const portraitCache = {};
+function portrait(k){
+  if (!portraitCache[k]) portraitCache[k]=svgURL(spriteSVG(k==='zombie'?{...ZOMBIE_LOOKS[0],zombie:true}:CAST[k],0));
+  return portraitCache[k];
+}
+function loadSprites(){
+  const jobs=[];
+  const add=(key,spec)=>{ SPR[key]=[0,1,2].map(f=>{ const im=new Image(); jobs.push(new Promise(r=>{ im.onload=r; im.onerror=r; })); im.src=svgURL(spriteSVG(spec,f)); return im; }); };
+  for (const k in CAST) add(k, CAST[k]);
+  SURV_LOOKS.forEach((sp,i)=>add('s'+i, sp));
+  ZOMBIE_LOOKS.forEach((sp,i)=>add('z'+i, {...sp, zombie:true}));
+  return Promise.race([Promise.all(jobs), new Promise(r=>setTimeout(r,2500))]);
+}
+
+
+let state='title', paused=false;
+let day=1, weather='clear', dayTime=0, night=false, gameTime=0;
+let P, S, bag, F;
+let zombies=[], crumbs=[], noises=[], items=[], survivors=[], followers=[], alarms=[], thrown=[];
+let companion=null, trail=[];
+let stepT=0, crumbT=0, flowT=0, nightSpawnT=0, hudT=0, flashT=0, screamCd=0;
+let playerFlow=null, noiseNear=0, rescuedToday=0, itemsToday=0, talkedToday=0, graceUsed=false;
+let pendingBitten=0, overflow=0;
+let zGroanT=0, alertCd=0, dangerLevel=0, yewonToday=0;
+let mouse={x:0,y:0,moved:false};
+const keys={};
+const cam={x:0,y:0};
+
+const SAVE_KEY='lastclass:save';
+function saveGame(){
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify({v:1, day, weather, S, bag:{...bag, perfumeT:0}, F, P:{hp:P.hp, hunger:P.hunger, morale:P.morale}})); } catch(e){}
+}
+function loadSave(){
+  try { const d=JSON.parse(localStorage.getItem(SAVE_KEY)||'null'); return d && d.v===1 && d.S && d.day ? d : null; } catch(e){ return null; }
+}
+function clearSave(){ try { localStorage.removeItem(SAVE_KEY); } catch(e){} }
+function continueGame(d){
+  newGame(true);
+  Object.assign(S, d.S); Object.assign(bag, d.bag); Object.assign(F, d.F);
+  P.hp=d.P.hp; P.hunger=d.P.hunger; P.morale=d.P.morale;
+  day=d.day; weather=d.weather;
+  showBrief();
+}
+function newGame(noBrief){
+  S={survivors:12, food:10, barricade:60, morale:60, streak60:0, streak65:0, streak70:0, stage:0, keep:0, abandon:0, tiHist:[], radioBonus:0, partsNeeded:3, peak:12};
+  bag={can:0, alarms:1, fuel:60, wood:0, parts:0, shoes:false, perfumeT:0};
+  F={infected:false, infectDays:0, courage:0, courageProg:0, jihwanInjured:0, sujinInjured:0, yewonInjured:0, hyunsungInjured:0, jihwanSkip:0, hyunAff:0,
+     nextReveal:0, nextMorale:0, nextHpPenalty:0, horde:false, cache:false, swMsgs:[], sw:{}, sujinUp:false, hint:{}};
+  P={x:START.x, y:START.y, r:10, hp:100, hunger:80, morale:60, face:1, phase:0, mode:'walk', moving:false, idleT:0, invuln:0, torchLit:false, inShelter:true, inWater:false};
+  day=1; weather='clear';
+  if (noBrief===true) return;
+  saveGame();
+  showBrief();
+}
+
+/* ---------- 스폰 ---------- */
+function randTile(pred, tries=800){
+  for (let i=0;i<tries;i++){
+    const x=ri(1,W-2), y=ri(1,H-2);
+    if (pred(map[y][x],x,y)) return {x:(x+0.5)*TILE, y:(y+0.5)*TILE, tx:x, ty:y};
+  }
+  return null;
+}
+const farFromShelter = (x,y,n) => Math.hypot((x+0.5)*TILE-SHELTER_DOOR.x,(y+0.5)*TILE-SHELTER_DOOR.y) > n*TILE;
+function spawnZombie(pos){
+  zombies.push({x:pos.x, y:pos.y, r:10, look:ri(0,ZOMBIE_LOOKS.length-1), id:zombies.length, chargeT:0, tiredT:0, stuckT:0, turnCd:0, pauseT:rand(0,1.5), state:'wander', dir:rand(0,Math.PI*2), dirT:rand(1,3), stun:0, atkCd:0, sniffT:0,
+    target:null, linger:0, trackT:0, scanT:0, noneT:0, lost:0, fleeT:0, phase:rand(0,6), face:1, wasCharging:false});
+}
+function spawnZombies(){
+  zombies=[];
+  let n=Math.min(60, 16+day*3) + (F.horde?8:0);
+  if (F.horde) toast('좀비 무리가 학교에 도착했다. 평소보다 많다','bad');
+  F.horde=false;
+  for (let i=0;i<n;i++){
+    const indoor=Math.random()<0.6;
+    const pos=randTile((t,x,y)=> (indoor ? (t===T.FLOOR && inBuilding(x,y)) : t===T.GRASS) && farFromShelter(x,y,12));
+    if (pos) spawnZombie(pos);
+  }
+}
+function placeItem(type, pred){
+  const pos=randTile(pred || ((t,x,y)=> (t===T.FLOOR || (t===T.GRASS && Math.random()<0.35)) && farFromShelter(x,y,6)));
+  if (pos) items.push({x:pos.x, y:pos.y, type, revealed:false, bob:rand(0,6)});
+}
+function weightedPick(pool){
+  const total=pool.reduce((s,[,w])=>s+w,0); let r=Math.random()*total;
+  for (const [k,w] of pool){ if ((r-=w)<0) return k; }
+  return pool[0][0];
+}
+function spawnItems(){
+  items=[];
+  for (let i=0;i<14+Math.floor(S.survivors/10);i++) placeItem(weightedPick(ITEM_POOL));
+  const parts = 1 + (S.stage>=2?1:0);
+  for (let i=0;i<parts;i++) placeItem('part',(t,x,y)=> t===T.FLOOR && inBuilding(x,y) && farFromShelter(x,y,22));
+  if (!bag.shoes && day>=2 && Math.random()<0.5) placeItem('shoes',(t,x,y)=> t===T.FLOOR && inBuilding(x,y));
+  const medRoom = r => (t,x,y)=> t===T.FLOOR && x>r.x0 && x<r.x1 && y>r.y0 && y<r.y1;
+  if (F.infected) placeItem('vaccine', medRoom(pick([ROOMS[2],ROOMS[4]])));
+  else if (Math.random()<0.08) placeItem('vaccine', medRoom(ROOMS[4]));
+  if (F.cache){
+    for (let i=0;i<4;i++) placeItem(pick(['medkit','can','bandage','torch']),(t,x,y)=> t===T.GRASS && !farFromShelter(x,y,12) && farFromShelter(x,y,4));
+    toast('누군가 쉘터 근처에 물자를 숨겨 뒀다는 소문이 돈다','good');
+    F.cache=false;
+  }
+  if (F.nextReveal){ revealItems(F.nextReveal); F.nextReveal=0; }
+  if (companion && companion.who==='hyunsung') items.forEach(i=>i.revealed=true);
+}
+function revealItems(n){
+  const hidden=items.filter(i=>!i.revealed).sort((a,b)=>(a.type==='medkit'||a.type==='bandage'?-1:0)-(b.type==='medkit'||b.type==='bandage'?-1:0));
+  hidden.slice(0,n).forEach(i=>i.revealed=true);
+}
+function spawnSurvivors(){
+  survivors=[];
+  const n=2+(Math.random()<0.5?1:0)+(S.stage>=3?1:0);
+  for (let i=0;i<n;i++){
+    const r=pick(ROOMS);
+    const pos=randTile((t,x,y)=> t===T.FLOOR && x>r.x0 && x<r.x1 && y>r.y0 && y<r.y1, 200);
+    if (pos) survivors.push({x:pos.x, y:pos.y, r:9, look:ri(0,SURV_LOOKS.length-1), name:pick(NAMES), state:'hide', bitten:Math.random()<0.13, phase:0, face:1});
+  }
+}
+
+/* ---------- 하루 시작 ---------- */
+function startDay(who){
+  companion = who ? {who, x:START.x, y:START.y+20, phase:0, face:1, name: CAST[who].name} : null;
+  if (who==='jihwan') F.jihwanSkip=0; else F.jihwanSkip++;
+  crumbs=[]; noises=[]; followers=[]; alarms=[]; thrown=[]; trail=[]; flowCache.clear();
+  P.x=START.x; P.y=START.y; P.torchLit=false; P.invuln=0; P.idleT=0;
+  P.morale=clamp(S.morale + F.nextMorale + (S.stage>=2?5:0), 20, 100); F.nextMorale=0;
+  P.hp=clamp(P.hp - F.nextHpPenalty, 1, 100); F.nextHpPenalty=0;
+  dayTime=0; night=false; graceUsed=false; talkedToday=0; rescuedToday=0; itemsToday=0; noiseNear=0; nightSpawnT=0;
+  pendingBitten=0; overflow=0; bag.perfumeT=0; yewonToday=0;
+  Sound.play('dawn');
+  spawnZombies(); spawnItems(); spawnSurvivors();
+  state='play'; paused=false;
+  $('#overlay').hidden=true; $('#hud').hidden=false;
+  toast(`${day}일차 아침, 날씨는 ${WEATHER[weather]}.`);
+  if (day===1){
+    setTimeout(()=>toast('좀비는 앞을 못 본다. 소리와 냄새만 조심하자'),2200);
+    setTimeout(()=>toast('Shift로 달리면 빠르지만 금방 배고파진다. 걸으면 다시 찬다'),5200);
+    setTimeout(()=>toast('물건을 주우면 사기가 오른다. 가만히 있으면 떨어진다'),8200);
+  }
+  if (weather==='rain') setTimeout(()=>toast('빗소리가 발소리를 덮는다. 대신 횃불은 켤 수 없다'),3000);
+  if (weather==='heat') setTimeout(()=>toast('폭염이다. 달리면 평소보다 빨리 배고파진다'),3000);
+}
+
+/* ---------- 소리 ---------- */
+function emitNoise(x,y,meters,kind){
+  const r=meters*TILE*(weather==='rain'?0.6:1);
+  noises.push({x,y,r,t:0,kind});
+  const loud = kind==='alarm' || kind==='scream' || kind==='yell';
+  for (const z of zombies){
+    if (z.state==='flee' || z.stun>0) continue;
+    const d=Math.hypot(z.x-x,z.y-y);
+    // 큰 소리는 벽 너머에서도 절반 거리까지는 먹먹하게 들린다
+    const heard = d<r && (!blocked(x,y,z.x,z.y) || (loud && d<r*0.5));
+    if (!heard) continue;
+    // 알람은 유인용: 플레이어가 3m 밖이면 돌진·냄새 맡던 좀비도 끌어낸다
+    if (kind==='alarm' && (z.state==='charge'||z.state==='sniff') && dist(z,P)>3*TILE && d<dist(z,P)*1.6){
+      z.state='investigate'; z.target={x,y}; z.linger=0; z.lure=true; z.chargeT=0; continue;
+    }
+    if (z.state==='charge') continue;
+    if (z.state==='sniff'){
+      // 냄새를 맡던 중에 소리까지 들리면 더 빨리 달려든다 (대기가 초기화되지 않게)
+      if (z.sniffT>0.35) z.sniffT=Math.max(0.35, z.sniffT-0.15);
+      continue;
+    }
+    z.state='investigate'; z.target={x,y}; z.linger=0; z.lure = kind==='alarm';
+  }
+  if (Math.hypot(x-SHELTER_DOOR.x,y-SHELTER_DOOR.y) < 20*TILE) noiseNear += (kind==='step'||kind==='run') ? meters*0.04 : meters*0.6;
+}
+
+/* ---------- 업데이트 ---------- */
+function moraleMult(m){ return m>=70?1 : m>=40?0.9 : m>=20?0.75 : 0.6; }
+function update(dt){
+  gameTime+=dt;
+  const wasNight=night;
+  dayTime+=dt;
+  if (!night && dayTime>=DAY_LEN){ night=true; }
+  if (night && !wasNight) startNight();
+  updatePlayer(dt);
+  if (state!=='play') return;
+  updateFollowers(dt);
+  updateZombies(dt);
+  updateWorld(dt);
+}
+function startNight(){
+  toast('해가 졌다. 좀비가 거세진다. 쉘터로 돌아가자','bad');
+  Sound.play('night');
+  const n=Math.ceil(zombies.length*0.4);
+  for (let i=0;i<n;i++){
+    const pos=randTile((t,x,y)=> t===T.GRASS && Math.hypot((x+.5)*TILE-P.x,(y+.5)*TILE-P.y)>14*TILE && farFromShelter(x,y,8));
+    if (pos) spawnZombie(pos);
+  }
+}
+function updatePlayer(dt){
+  const ax=(keys.KeyD||keys.ArrowRight?1:0)-(keys.KeyA||keys.ArrowLeft?1:0);
+  const ay=(keys.KeyS||keys.ArrowDown?1:0)-(keys.KeyW||keys.ArrowUp?1:0);
+  P.moving = !!(ax||ay);
+  P.mode = (keys.KeyC) ? 'crouch' : (keys.ShiftLeft||keys.ShiftRight) ? 'run' : 'walk';
+  P.inWater = tileOf(P.x,P.y)===T.WATER;
+  const t=tileOf(P.x,P.y); P.inShelter = t===T.SHELTER || t===T.SDOOR;
+  let sp = P.mode==='run' ? (P.hunger<20?SPEED.runHungry:SPEED.run) : P.mode==='crouch' ? SPEED.crouch : SPEED.walk;
+  sp *= moraleMult(P.morale);
+  if (P.inWater) sp*=0.6;
+  if (P.moving){
+    const l=Math.hypot(ax,ay);
+    moveEnt(P, ax/l*sp*dt, ay/l*sp*dt, solidP);
+    if (ax) P.face=ax;
+    P.phase += dt*(P.mode==='run'?16:P.mode==='crouch'?6:9);
+    const last=trail[trail.length-1];
+    if (!last || Math.hypot(last.x-P.x,last.y-P.y)>4){ trail.push({x:P.x,y:P.y}); if (trail.length>200) trail.shift(); }
+  }
+  // 포만감
+  if (P.moving && P.mode==='run'){
+    let drain=1.6*(weather==='heat'?1.5:1)*(bag.shoes?0.7:1)*(S.stage>=3?0.8:1);
+    P.hunger-=drain*dt;
+  } else if (P.moving){ P.hunger += (P.mode==='crouch'?0.2:0.35)*dt; }
+  if (P.inShelter) P.hunger+=1.2*dt;
+  P.hunger=clamp(P.hunger,0,100);
+  if (P.hunger<=0){ P.hp-=1*dt; hintOnce('starve','배가 너무 고프다. 통조림(F)을 먹거나 천천히 걷자','bad'); }
+  // 사기
+  if (!P.moving && !P.inShelter){ P.idleT+=dt; if (P.idleT>4){ P.morale-=0.5*dt; hintOnce('idle','가만히 있으니 불안해진다. 사기가 떨어지고 있다'); } }
+  else P.idleT=0;
+  if (night && !P.inShelter) P.morale-=0.3*dt;
+  if (P.inShelter) P.morale+=0.4*dt;
+  P.morale=clamp(P.morale,0,100);
+  // 발소리
+  stepT-=dt;
+  if (P.moving && stepT<=0){
+    stepT=P.mode==='run'?0.3:0.45;
+    if (P.inWater){ emitNoise(P.x,P.y,4,'step'); Sound.play('splash'); }
+    else if (P.mode==='run'){ emitNoise(P.x,P.y,10,'run'); Sound.play('step',{run:true}); }
+    else if (P.mode==='walk'){ emitNoise(P.x,P.y,3,'step'); Sound.play('step'); }
+  }
+  // 냄새 흔적
+  if (P.inWater && crumbs.length){ crumbs=[]; hintOnce('water','물이 냄새 흔적을 지웠다. 좀비는 물을 건너지 못한다','good'); }
+  if (bag.perfumeT>0) bag.perfumeT-=dt;
+  crumbT-=dt;
+  if (crumbT<=0 && !P.inWater && bag.perfumeT<=0 && !P.inShelter){ crumbT=0.25; crumbs.push({x:P.x,y:P.y,t:gameTime}); }
+  const life = weather==='rain'?8:20;
+  while (crumbs.length && gameTime-crumbs[0].t>life) crumbs.shift();
+  // 횃불
+  if (P.torchLit){
+    bag.fuel-=dt;
+    if (weather==='rain'){ P.torchLit=false; toast('비 때문에 횃불이 꺼졌다','bad'); }
+    else if (bag.fuel<=0){ bag.fuel=0; P.torchLit=false; toast('횃불이 다 탔다','bad'); }
+    else if (bag.fuel<10 && !P.fuelWarned){ P.fuelWarned=true; toast('횃불이 곧 꺼진다. 벽 뒤나 물가로 피하자','bad'); }
+  }
+  P.invuln-=dt;
+  // 쉘터 도착
+  if (P.inShelter && followers.length) deliverFollowers();
+  if (P.inShelter && night) endDay();
+  if (P.hp<=0) gameOver('dead');
+}
+function deliverFollowers(){
+  for (const f of followers){
+    if (S.survivors<50){ S.survivors++; rescuedToday++; if (f.bitten) pendingBitten++; toast(`${f.name} 구조 완료. 쉘터 인원 ${S.survivors}명`,'good'); }
+    else { overflow++; toast(`쉘터가 꽉 찼다. ${f.name}은(는) 문 앞에서 기다린다`,'bad'); }
+    P.morale=clamp(P.morale+8,0,100);
+  }
+  Sound.play('rescue');
+  S.peak=Math.max(S.peak,S.survivors);
+  followers=[];
+}
+function trailPoint(i){
+  const idx=trail.length-1-(i+1)*9;
+  return trail[Math.max(0,idx)] || {x:P.x,y:P.y};
+}
+function updateFollowers(dt){
+  const list=[]; if (companion) list.push(companion); list.push(...followers);
+  list.forEach((f,i)=>{
+    const tp=trailPoint(i), ox=f.x;
+    const k=Math.min(1, dt*9);
+    f.x+=(tp.x-f.x)*k; f.y+=(tp.y-f.y)*k;
+    if (Math.abs(f.x-ox)>0.05) f.face=Math.sign(f.x-ox);
+    f.phase+=dt*(P.moving?9:0);
+  });
+}
+function companionHurt(){
+  const c=companion; companion=null;
+  F[c.who+'Injured']=2;
+  P.morale=clamp(P.morale-10,0,100);
+  toast(`${c.name}이(가) 다쳐서 쉘터로 돌아갔다`,'bad');
+}
+let yellCd=0;
+const maxFollowers=()=> companion && companion.who==='yewon' ? 5 : 3;
+const isOut=who=> !!companion && companion.who===who;
+function hyunCheck(z){
+  if (!isOut('hyunsung') || yellCd>0) return;
+  if (dist(z,companion)>7*TILE) return;
+  yellCd=5;
+  if (Math.random()<0.3){
+    emitNoise(companion.x,companion.y,15,'yell'); Sound.play('yell');
+    toast('현성: “저리 꺼져!” 고함 소리에 좀비가 몰려온다','bad');
+  }
+}
+function sujinCheck(z){
+  if (!companion || companion.who!=='sujin' || screamCd>0) return;
+  if (dist(z,companion)>7*TILE) return;
+  screamCd=4;
+  const chance=[0.45,0.3,0.18,0.08][F.courage];
+  if (Math.random()<chance){
+    emitNoise(companion.x,companion.y,25,'scream'); Sound.play('scream',{pan:(companion.x-P.x)/(8*TILE)});
+    toast('수진이 비명을 질렀다! 주변 좀비가 몰려온다','bad');
+  } else {
+    F.courageProg++;
+    if (F.courageProg>=2 && F.courage<3){ F.courage++; F.courageProg=0; F.sujinUp=true; toast('수진이 비명을 꾹 참았다','good'); }
+  }
+}
+function updateZombies(dt){
+  const nightMul = night?1.15:1;
+  alertCd-=dt; zGroanT-=dt; let minDanger=Infinity;
+  flowT-=dt;
+  if (flowT<=0){ flowT=0.25; playerFlow=flowFrom(clamp(Math.floor(P.x/TILE),0,W-1), clamp(Math.floor(P.y/TILE),0,H-1)); }
+  screamCd-=dt; yellCd-=dt;
+  for (const z of zombies){
+    z.atkCd-=dt;
+    if (z.tiredT>0) z.tiredT-=dt;
+    if (z.stun>0){ z.stun-=dt; continue; }
+    const dp=dist(z,P);
+    // 불을 보면 도망
+    if (P.torchLit && dp<3*TILE && z.state!=='flee'){ z.state='flee'; z.fleeT=1.4; }
+    if (z.state==='flee'){
+      z.fleeT-=dt;
+      // 불에서 멀어지는 길을 따라 도망 (책상·벽에 끼지 않게)
+      const s=fleeStep(z);
+      if (s && z.stuckT<0.3) stepToward(z,s.x,s.y,110,dt);
+      else { const a=Math.atan2(z.y-P.y,z.x-P.x)+(z.stuckT>0.3?(z.id%2?1.2:-1.2):0); stepToward(z,z.x+Math.cos(a)*40,z.y+Math.sin(a)*40,110,dt); if (z.stuckT>1) z.stuckT=0; }
+      if (z.fleeT<=0 && !(P.torchLit && dp<3.5*TILE)) z.state='wander';
+      continue;
+    }
+    // 5m 근접 감지 (벽 너머는 감지 못함)
+    if (!P.inShelter && z.state!=='charge'){
+      const range = P.mode==='crouch' ? 3*TILE : 5*TILE;
+      if (dp<range && !blocked(z.x,z.y,P.x,P.y)){
+        if (z.state!=='sniff'){ z.state='sniff'; z.sniffT = P.mode==='crouch'?1.8:1.0; }
+      } else if (z.state==='sniff'){ z.state='track'; z.trackT=gameTime-30; z.noneT=0; }
+    }
+    switch (z.state){
+      case 'sniff':
+        z.sniffT-=dt; z.face=P.x>z.x?1:-1;
+        if (z.sniffT<=0){ z.state='charge'; z.lost=0; z.chargeT=0; z.wasCharging=true; sujinCheck(z); hyunCheck(z); if (alertCd<=0){ alertCd=0.4; Sound.play('alert',{pan:(z.x-P.x)/(8*TILE)}); } }
+        break;
+      case 'charge': {
+        if (P.inShelter){ z.state='investigate'; z.target={...SHELTER_DOOR}; break; }
+        z.chargeT+=dt;
+        if (z.chargeT>CHARGE_MAX){ z.state='wander'; z.stun=1.4; z.tiredT=1.6; z.chargeT=0; break; }
+        let sp=SPEED.zCharge*nightMul; if (dp<36) sp*=0.75;
+        const clear=!blocked(z.x,z.y,P.x,P.y) && z.stuckT<0.25;
+        let tx=P.x, ty=P.y;
+        if (!clear && playerFlow){ const s=flowStep(z,playerFlow); if (s){ tx=s.x; ty=s.y; } z.lost+=dt; } else z.lost=0;
+        stepToward(z,tx,ty,sp,dt);
+        if (dp>9*TILE || z.lost>1.5){ z.state='track'; z.trackT=gameTime-30; z.noneT=0; }
+        break;
+      }
+      case 'track': {
+        z.scanT-=dt;
+        if (z.scanT<=0){
+          z.scanT=0.3; let best=null;
+          for (const c of crumbs){ if (c.t>z.trackT && Math.hypot(c.x-z.x,c.y-z.y)<70 && (!best || c.t>best.t)) best=c; }
+          if (best){ z.target={x:best.x,y:best.y}; z.trackT=best.t; z.noneT=0; }
+          else { z.noneT+=0.3; if (z.noneT>2){ z.state='wander'; z.target=null; } }
+        }
+        if (z.target) stepToward(z,z.target.x,z.target.y,SPEED.zTrack*nightMul,dt);
+        break;
+      }
+      case 'investigate': {
+        if (!z.target){ z.state='wander'; z.lure=false; break; }
+        const d=Math.hypot(z.target.x-z.x,z.target.y-z.y);
+        if (d<20){ z.linger+=dt; if (z.linger>(z.lure?3.5:2.5)){ z.state='wander'; z.target=null; z.lure=false; } break; }
+        const isp=SPEED.zInvest*nightMul*(z.lure?1.6:1);
+        const fl=flowTo(z.target.x,z.target.y); const s=flowStep(z,fl);
+        if (s) stepToward(z,s.x,s.y,isp,dt);
+        else { stepToward(z,z.target.x,z.target.y,isp,dt); if (z.stuckT>0.2){ z.linger+=dt; if (z.linger>2.5){ z.state='wander'; z.target=null; } } }
+        break;
+      }
+      default: {
+        z.dirT-=dt; z.turnCd-=dt;
+        if (z.pauseT>0){ z.pauseT-=dt; }
+        else {
+          const want=SPEED.zWander*nightMul*dt;
+          const moved=moveEnt(z,Math.cos(z.dir)*want,Math.sin(z.dir)*want,solidZ);
+          setFace(z,Math.cos(z.dir)); z.phase+=dt*5;
+          if (z.dirT<=0 || (moved<want*0.4 && z.turnCd<=0)){
+            z.dir=openDir(z); z.dirT=rand(1.5,4); z.turnCd=0.6;
+            if (Math.random()<0.35) z.pauseT=rand(0.8,2.2);
+          }
+        }
+        // 냄새 맡기
+        if (crumbs.length){
+          const life=weather==='rain'?8:20;
+          for (let i=crumbs.length-1;i>=0;i-=3){ const c=crumbs[i]; if (gameTime-c.t<life && Math.hypot(c.x-z.x,c.y-z.y)<50){ z.state='track'; z.trackT=c.t-0.01; z.noneT=0; z.scanT=0; break; } }
+        }
+      }
+    }
+    if (z.stuckT>1.2 && (z.state==='track'||z.state==='investigate')){ z.state='wander'; z.target=null; z.stuckT=0; z.dir=openDir(z); }
+    if (z.state==='charge'||z.state==='sniff') minDanger=Math.min(minDanger,dp);
+    if (z.wasCharging && z.state!=='charge' && z.state!=='sniff') z.wasCharging=false;
+    // 공격
+    if (!P.inShelter && dp<22 && z.atkCd<=0) hitPlayer(z);
+    // 동료·생존자 물기
+    if (companion && dist(z,companion)<16 && (z.state==='charge'||z.state==='track')){ companionHurt(); z.stun=1.2; }
+    for (let i=followers.length-1;i>=0;i--){
+      const f=followers[i];
+      if (dist(z,f)<16){ followers.splice(i,1); z.stun=1.5; P.morale=clamp(P.morale-6,0,100); toast(`${f.name}이(가) 좀비에게 붙잡혔다`,'bad'); }
+    }
+  }
+  dangerLevel = minDanger<Infinity ? clamp(1-minDanger/(7*TILE),0.15,1) : 0;
+  // 주변 좀비 신음 소리
+  if (zGroanT<=0){
+    zGroanT=rand(0.9,2.2);
+    const near=zombies.filter(z=>dist(z,P)<12*TILE);
+    if (near.length){ const z=pick(near), d=dist(z,P); Sound.play('groan',{v:1-d/(12*TILE), pan:(z.x-P.x)/(8*TILE), muffled:blocked(z.x,z.y,P.x,P.y)}); }
+  }
+}
+function setFace(z,cx){ if (cx>0.25) z.face=1; else if (cx<-0.25) z.face=-1; }
+function stepToward(z,tx,ty,sp,dt){
+  const a=Math.atan2(ty-z.y,tx-z.x);
+  const d=Math.min(sp*dt, Math.hypot(tx-z.x,ty-z.y));
+  const moved=moveEnt(z,Math.cos(a)*d,Math.sin(a)*d,solidZ);
+  if (d>0.5){ setFace(z,Math.cos(a)); z.phase+=dt*(sp>150?14:6); }
+  // 움직이려는데 거의 못 움직이면 끼인 것으로 본다
+  if (d>0.5 && moved<d*0.3) z.stuckT+=dt; else z.stuckT=Math.max(0,z.stuckT-dt*2);
+  return moved;
+}
+// 막히지 않은 방향 고르기
+function openDir(z){
+  let best=rand(0,Math.PI*2);
+  for (let i=0;i<8;i++){
+    const a=rand(0,Math.PI*2);
+    if (!collides(z.x+Math.cos(a)*18,z.y+Math.sin(a)*18,z.r,solidZ)) return a;
+  }
+  return best;
+}
+// 플레이어(불)에서 길 거리가 멀어지는 쪽 타일
+function fleeStep(z){
+  if (!playerFlow) return null;
+  const tx=Math.floor(z.x/TILE), ty=Math.floor(z.y/TILE), cur=playerFlow[ty*W+tx];
+  if (cur<0) return null;
+  let best=cur, bx=0, by=0;
+  for (let dy=-1;dy<=1;dy++) for (let dx=-1;dx<=1;dx++){
+    if (!dx && !dy) continue;
+    const nx=tx+dx, ny=ty+dy; if (nx<0||ny<0||nx>=W||ny>=H) continue;
+    const v=playerFlow[ny*W+nx]; if (v<0 || v<=best) continue;
+    if (dx && dy && (solidZ(map[ty][nx]) || solidZ(map[ny][tx]))) continue;
+    best=v; bx=dx; by=dy;
+  }
+  if (best===cur) return null;
+  return {x:(tx+bx+0.5)*TILE, y:(ty+by+0.5)*TILE};
+}
+function hitPlayer(z){
+  if (P.invuln>0) return;
+  z.atkCd=1.4; z.stun=1.6; z.state='wander'; z.chargeT=0;
+  const a=Math.atan2(z.y-P.y,z.x-P.x); moveEnt(z,Math.cos(a)*30,Math.sin(a)*30,solidZ);
+  Sound.play('hit');
+  const dmg=20;
+  if (P.hp-dmg<=0 && !graceUsed && P.hp>1){ P.hp=1; graceUsed=true; toast('간신히 버텼다. 지금 도망쳐!','bad'); }
+  else P.hp-=dmg;
+  P.morale=clamp(P.morale-5,0,100); P.invuln=1.5; flashT=0.35;
+  if (!F.infected && Math.random()<0.35){ F.infected=true; F.infectDays=3; toast('물렸다. 3일 안에 치료제를 찾아야 한다','bad'); }
+  if (P.hp<=0) gameOver('dead');
+}
+function updateWorld(dt){
+  for (const n of noises) n.t+=dt;
+  noises=noises.filter(n=>n.t<1.1);
+  // 던진 알람
+  for (const o of thrown){
+    o.t+=dt; const k=Math.min(1,o.t/0.45);
+    o.x=o.sx+(o.tx-o.sx)*k; o.y=o.sy+(o.ty-o.sy)*k;
+    if (k>=1 && !o.landed){ o.landed=true; alarms.push({x:o.tx,y:o.ty,t:0,ring:0}); }
+  }
+  thrown=thrown.filter(o=>!o.landed);
+  for (const a of alarms){ a.t+=dt; a.ring-=dt; if (a.ring<=0 && a.t<8){ a.ring=1; emitNoise(a.x,a.y,15,'alarm'); Sound.play('alarm',{v:clamp(1-dist(a,P)/(20*TILE),0.15,1), pan:(a.x-P.x)/(8*TILE)}); } }
+  alarms=alarms.filter(a=>a.t<9);
+  // 아이템 줍기
+  for (let i=items.length-1;i>=0;i--){ if (dist(items[i],P)<20){ pickup(items[i]); items.splice(i,1); } }
+  // 밤 추가 스폰
+  if (night){ nightSpawnT+=dt; if (nightSpawnT>25){ nightSpawnT=0; for (let i=0;i<2;i++){ const pos=randTile((t,x,y)=>t===T.GRASS&&Math.hypot((x+.5)*TILE-P.x,(y+.5)*TILE-P.y)>12*TILE&&farFromShelter(x,y,8)); if (pos) spawnZombie(pos);} } }
+  if (flashT>0) flashT-=dt;
+}
+function pickup(it){
+  itemsToday++;
+  const nm=ITEMS[it.type].name; let msg='', boost=10;
+  switch (it.type){
+    case 'medkit': P.hp=clamp(P.hp+40,0,100); boost=15; msg=`${nm}: 체력 +40`; break;
+    case 'bandage': P.hp=clamp(P.hp+15,0,100); boost=15; msg=`${nm}: 체력 +15`; break;
+    case 'can': bag.can++; msg=`${nm}을 챙겼다 (F로 먹기, 쉘터에 가져가면 식량 +2)`; break;
+    case 'bar': P.hunger=clamp(P.hunger+20,0,100); msg=`${nm}: 포만감 +20`; break;
+    case 'torch': bag.fuel+=45; msg=`${nm}: 연료 +45초 (Q로 켜기)`; break;
+    case 'alarm': bag.alarms++; msg=`${nm}을 챙겼다 (R로 던지기)`; break;
+    case 'perfume': bag.perfumeT=20; crumbs=[]; msg=`${nm}: 20초 동안 냄새 흔적이 남지 않는다`; break;
+    case 'wood': bag.wood++; msg=`${nm}: 쉘터에 가져가면 바리케이드 +10`; break;
+    case 'shoes': bag.shoes=true; boost=15; msg=`${nm}: 달리기 배고픔 -30%`; break;
+    case 'part': bag.parts++; boost=15; msg=`${nm} (${bag.parts}/${S.partsNeeded}). 방송실 무전기로 가져가자`; break;
+    case 'vaccine': if (F.infected){ F.infected=false; F.infectDays=0; msg='치료제를 맞았다. 감염이 멈췄다'; } else msg='치료제를 찾았다. 보건실에 보관했다'; boost=15; break;
+  }
+  P.morale=clamp(P.morale+boost,0,100);
+  Sound.play(boost>=15?'heal':'pickup');
+  toast(`${msg}, 사기 +${boost}`,'good');
+}
+
+/* ---------- 상호작용 ---------- */
+function interactTarget(){
+  if (followers.length<maxFollowers()){
+    let best=null, bd=44;
+    for (const s of survivors){ if (s.state!=='hide') continue; const d=dist(s,P); if (d<bd){ bd=d; best=s; } }
+    if (best) return {kind:'survivor', obj:best, label:`E  ${best.name} 구조하기`};
+  }
+  if (!isOut('hyunsung') && dist(GUARD,P)<52) return {kind:'guard', obj:GUARD, label:'E  현성과 이야기하기'};
+  if (dist(RADIO,P)<52) return {kind:'radio', obj:RADIO, label:`E  무전 보내기 (부품 ${bag.parts}/${S.partsNeeded})`};
+  if (!isOut('yewon') && dist(YEWON,P)<48) return {kind:'yewon', obj:YEWON, label:'E  예원과 이야기하기'};
+  if (P.inShelter && !night){
+    if (dayTime>END_MIN) return {kind:'shelter', obj:P, label:'E  오늘 탐색 마치기'};
+    return {kind:'shelterEarly', obj:P, label:`E  ${Math.ceil(END_MIN-dayTime)}초 뒤부터 하루를 마칠 수 있다`};
+  }
+  return null;
+}
+function interact(){
+  const t=interactTarget(); if (!t) return;
+  if (t.kind==='survivor'){
+    t.obj.state='follow'; survivors=survivors.filter(s=>s!==t.obj);
+    t.obj.x=P.x; t.obj.y=P.y; followers.push(t.obj);
+    toast(`${t.obj.name}: “살려 줘서 고마워요. 따라갈게요.”`,'good');
+    Sound.play('ui');
+  } else if (t.kind==='guard') talkGuard();
+  else if (t.kind==='yewon') talkYewon();
+  else if (t.kind==='radio') useRadio();
+  else if (t.kind==='shelter') endDay();
+  else if (t.kind==='shelterEarly') toast(`아직 이르다. 탐색을 시작하고 ${END_MIN}초가 지나야 하루를 마칠 수 있다 (${Math.ceil(END_MIN-dayTime)}초 남음). 먼저 물자를 찾아보자`,'bad');
+}
+function talkYewon(){
+  if (!yewonToday){
+    yewonToday=1; P.morale=clamp(P.morale+5,0,100); Sound.play('pickup');
+    toast('예원: “다녀와. 해 지기 전에는 꼭 돌아와.” 사기 +5','good');
+  } else toast(pick(['예원: “부품은 멀리 있는 교실에 많대. 방송실 무전기를 잊지 마.”',
+    '예원: “달리면 금방 배고파져. 걸으면서 숨 고르는 것도 방법이야.”',
+    '예원: “좀비는 벽 너머로는 못 맡아. 문 하나만 사이에 둬도 달라.”',
+    '예원: “좀비도 오래는 못 달려. 몇 초만 버티면 지쳐서 멈춰.”']));
+}
+function talkGuard(){
+  if (talkedToday){
+    emitNoise(GUARD.x,GUARD.y,15,'yell'); Sound.play('yell');
+    toast('현성: “한 번 말했으면 알아들어야지!” 고함 소리가 울린다','bad');
+    return;
+  }
+  talkedToday=1;
+  const lines=['현성: “또 너냐. …창고 열쇠 둔 데랑 숨겨 둔 거 몇 개는 알려 주지.”',
+    '현성: “어제보단 낫네. 보건실 쪽에 쓸 만한 게 있었던 것 같다.”',
+    '현성: “커피 한 잔 하고 가. 이 학교에서 내가 모르는 구석은 없어.”'];
+  toast(lines[Math.min(2,F.hyunAff)],'good');
+  F.hyunAff++;
+  revealItems(3 + (F.hyunAff>=3?1:0));
+  setTimeout(()=>toast('숨겨진 물건 위치가 미니맵에 표시됐다'),1600);
+}
+function eatCan(){
+  if (!bag.can){ toast('먹을 통조림이 없다'); return; }
+  bag.can--; Sound.play('eat'); P.hunger=clamp(P.hunger+30,0,100); toast('통조림을 먹었다. 포만감 +30');
+}
+function toggleTorch(){
+  if (P.torchLit){ P.torchLit=false; toast('횃불을 껐다'); return; }
+  if (weather==='rain'){ toast('비가 와서 불을 붙일 수 없다','bad'); return; }
+  if (bag.fuel<=0){ toast('횃불 연료가 없다','bad'); return; }
+  P.torchLit=true; P.fuelWarned=false; Sound.play('torch'); toast('횃불을 켰다. 3m 안의 좀비가 물러난다');
+}
+function throwAlarm(){
+  if (!bag.alarms){ toast('알람시계가 없다'); return; }
+  bag.alarms--;
+  let tx, ty;
+  if (mouse.moved){ const w=screenToWorld(mouse.x,mouse.y); tx=w.x; ty=w.y; }
+  else { tx=P.x+P.face*6*TILE; ty=P.y; }
+  let d=Math.hypot(tx-P.x,ty-P.y); const mx=8*TILE;
+  if (d>mx){ tx=P.x+(tx-P.x)/d*mx; ty=P.y+(ty-P.y)/d*mx; d=mx; }
+  // 벽에 맞으면 벽 앞에 떨어진다
+  const n=Math.ceil(d/6); let lx=P.x, ly=P.y;
+  for (let i=1;i<=n;i++){ const x=P.x+(tx-P.x)*i/n, y=P.y+(ty-P.y)*i/n; if (solidP(tileOf(x,y))) break; lx=x; ly=y; }
+  tx=lx; ty=ly;
+  thrown.push({sx:P.x,sy:P.y,tx,ty,x:P.x,y:P.y,t:0}); Sound.play('ui');
+  toast('알람시계를 던졌다. 8초 동안 울려 좀비를 끌어당긴다');
+}
+
+/* ---------- 무전 (주간 목표, 4단계 판정) ---------- */
+function useRadio(){
+  if (bag.parts<S.partsNeeded){ toast(`무전기를 고치려면 부품이 ${S.partsNeeded-bag.parts}개 더 필요하다`); return; }
+  Sound.play('radio');
+  const stageB=[0,5,10,15][S.stage], foodB=Math.min(15,S.food), luck=ri(-10,20);
+  const score=40+stageB+foodB+S.radioBonus+luck;
+  const parts=[`기본 40`,`쉘터 ${STAGES[S.stage]} +${stageB}`,`비축 식량 +${foodB}`,`지난 시도 +${S.radioBonus}`,`전파 상태 ${luck>=0?'+':''}${luck}`];
+  let title, body, tone, after=null;
+  if (score>=85){ title='완전 성공'; tone='good'; body='“여기는 구조대. 좌표 확인했다. 내일 아침 운동장으로 간다.”'; after=()=>gameOver(S.survivors>=30?'rescueAll':'rescueFew'); }
+  else if (score>=55){ title='부분 성공'; tone='good'; body='응답이 왔지만 좌표가 끊겼다. 부품 하나만 더 있으면 다시 보낼 수 있다.'; bag.parts=0; S.partsNeeded=1; S.radioBonus+=10; P.morale=clamp(P.morale+4,0,100); }
+  else if (score>=25){ title='실패'; tone='bad'; body='잡음뿐이다. 부품 두 개가 타 버렸지만, 주파수는 기억해 뒀다.'; bag.parts=Math.max(0,bag.parts-2); S.partsNeeded=Math.max(S.partsNeeded,2); S.radioBonus+=10; P.morale=clamp(P.morale-3,0,100); }
+  else { title='좌절'; tone='bad'; body='무전기가 불꽃을 튀기며 꺼졌다. 처음부터 다시 모아야 한다. 대신 고치는 요령은 익혔다.'; bag.parts=0; S.partsNeeded=3; S.radioBonus+=15; P.morale=clamp(P.morale-8,0,100); }
+  state='modal';
+  showModal({title:`무전 판정: ${title}`, html:`<p>${body}</p><ul class="lines">${parts.map(p=>`<li>${p}</li>`).join('')}<li class="${tone}">성공도 ${score}% (완전 성공 85%, 부분 성공 55%)</li></ul>`,
+    choices:[{label: after?'결말 보기':'계속 탐색하기', primary:true, fn:()=>{ if (after) after(); else resume(); }}]});
+}
+
+/* ---------- 밤 ---------- */
+function endDay(){
+  if (state!=='play') return;
+  if (followers.length) deliverFollowers();
+  state='night'; $('#hud').hidden=true;
+  runNight();
+}
+function canSW(k){ const s=F.sw[k]||(F.sw[k]={last:-9,wk:-1,n:0}); const wk=Math.floor((day-1)/7); if (s.wk!==wk){ s.wk=wk; s.n=0; } return s.n<2 && day-s.last>=2; }
+function useSW(k){ const s=F.sw[k]; s.n++; s.last=day; }
+function runNight(){
+  const L=[]; const events=[]; const M=[];
+  const B={food:S.food, barricade:S.barricade, morale:S.morale, survivors:S.survivors};
+  // 가져온 물자
+  if (bag.can){ S.food+=bag.can*2; L.push({why:'탐색', t:`가져온 통조림 ${bag.can}개 → 비축 식량 +${bag.can*2}`, c:'good'}); bag.can=0; }
+  if (bag.wood){ S.barricade=clamp(S.barricade+bag.wood*10,0,100); L.push({why:'탐색', t:`가져온 자재 ${bag.wood}개 → 바리케이드 +${bag.wood*10}`, c:'good'}); bag.wood=0; }
+  if (rescuedToday) L.push({why:'구조', t:`낮에 ${rescuedToday}명을 구조해 데려왔다 (인원에 이미 반영) → 오늘 밤 쉘터 사기 +${3*rescuedToday}`, c:'good'});
+  // 선택 이벤트
+  if (pendingBitten>0) events.push({title:'물린 자국', html:`<p>오늘 구조한 사람 중 한 명이 팔의 상처를 숨기고 있었다. 물린 자국이다.</p><p class="muted">지금 쉘터: 인원 ${S.survivors}명, 비축 식량 ${S.food}, 쉘터 사기 ${Math.round(S.morale)}. 고른 결과는 밤 정산에 <span class="why">감염</span> 표시로 남는다.</p>`,
+    choices:[
+      {label:'격리하고 지켜본다', sub:'식량 -2, 지키는 쉘터 흔적. 20% 확률로 감염 확산(인원 -2)', fn:()=>{ const f0=S.food, s0=S.survivors; S.food=Math.max(0,S.food-2); S.keep++;
+        if (Math.random()<0.2){ S.survivors=Math.max(0,S.survivors-2); L.push({why:'감염', t:`격리를 골랐다 → 식량 ${f0} → ${S.food}. 그러나 20% 확산 판정에 걸려 인원 ${s0} → ${S.survivors}`, c:'bad'}); }
+        else L.push({why:'감염', t:`격리를 골랐다 → 식량 ${f0} → ${S.food}. 20% 확산 판정을 피해 감염자 없음`, c:'good'}); }},
+      {label:'쉘터 밖으로 내보낸다', sub:'인원 -1, 사기 -8, 버리는 쉘터 흔적', fn:()=>{ const s0=S.survivors; S.survivors=Math.max(0,S.survivors-1); S.morale-=8; M.push(['내보냄',-8]); S.abandon++; L.push({why:'감염', t:`내보내기를 골랐다 → 인원 ${s0} → ${S.survivors}, 쉘터 사기 -8. 감염 위험은 사라졌다`, c:'bad'}); }}
+    ]});
+  if (overflow>0) events.push({title:'정원 초과', html:`<p>쉘터는 50명이 한계다. 문 앞에 ${overflow}명이 서 있다.</p>`,
+    choices:[
+      {label:'돌려보낸다', sub:'사기 -6, 버리는 쉘터 흔적', fn:()=>{ S.morale-=6; M.push(['돌려보냄',-6]); S.abandon++; L.push({why:'정원 초과', t:'돌려보내기를 골랐다 → 쉘터 사기 -6', c:'bad'}); }},
+      {label:'물자를 나눠 보낸다', sub:'식량 -3, 사기 +2, 지키는 쉘터 흔적', fn:()=>{ const f0=S.food; S.food=Math.max(0,S.food-3); S.morale+=2; M.push(['물자 나눔',2]); S.keep++; L.push({why:'정원 초과', t:`물자 나누기를 골랐다 → 식량 ${f0} → ${S.food}, 쉘터 사기 +2`, c:'good'}); }}
+    ]});
+  if (!companion && F.jihwanSkip>=2 && !F.jihwanInjured && Math.random()<0.35) events.push({title:'지환이 사라졌다', html:'<p>“잠깐 둘러보고 올게.” 쪽지를 남기고 지환이 밤에 혼자 나갔다.</p>',
+    choices:[
+      {label:'찾으러 나간다', sub:'내일 체력 -15, 지키는 쉘터 흔적, 지환이 본 물건 위치 공개', fn:()=>{ F.nextHpPenalty+=15; S.keep++; F.nextReveal+=3; F.jihwanSkip=0; L.push({t:'지환을 데려왔다. 그가 본 물건 위치를 들었다', c:'good'}); }},
+      {label:'기다린다', sub:'반반: 부품을 들고 오거나, 다쳐서 돌아온다', fn:()=>{ F.jihwanSkip=0; if (Math.random()<0.5){ bag.parts++; L.push({t:'새벽에 지환이 무전기 부품을 들고 왔다', c:'good'}); } else { F.jihwanInjured=2; S.morale-=5; M.push(['지환 부상',-5]); L.push({why:'지환', t:'기다리기를 골랐다 → 지환이 다쳐서 돌아왔다. 이틀간 동행 불가, 쉘터 사기 -5', c:'bad'}); } }}
+    ]});
+  let i=0;
+  const next=()=>{
+    if (i<events.length){ const e=events[i++]; showModal({title:e.title, html:e.html, choices:e.choices.map(c=>({...c, fn:()=>{ c.fn(); next(); }}))}); }
+    else finishNight(L, B, M);
+  };
+  next();
+}
+function finishNight(L, B, M){
+  // 배급
+  const cons=Math.ceil(S.survivors/5);
+  if (S.food>=cons){ const f0=S.food; S.food-=cons; S.morale+=2; M.push(['배급',2]); L.push({why:'배급', t:`인원 ${S.survivors}명 ÷ 5 = 식량 ${cons} 배급 → 비축 ${f0} → ${S.food}`}); P.hunger=85; }
+  else {
+    const deficit=cons-S.food; S.food=0;
+    const leave=Math.min(Math.max(0,S.survivors-1), deficit);
+    S.survivors-=leave; S.morale-=10; M.push(['식량 부족',-10]); P.hunger=50;
+    L.push({why:'배급', t:`필요한 식량 ${cons} 중 ${deficit}이 모자랐다 → ${leave}명이 쉘터를 떠났다`, c:'bad'});
+  }
+  if (rescuedToday){ S.morale+=3*rescuedToday; M.push(['구조',3*rescuedToday]); }
+  const pm=Math.round((P.morale-50)/10); if (pm){ S.morale+=pm; M.push(['현세 사기',pm]); }
+  const decay=Math.round(3*0.7*(S.stage>=1?0.9:1)); S.morale-=decay; M.push(['하루 경과',-decay]); // 예원의 통솔로 감소 완화
+  // 밤 습격
+  const aBase=ri(3,9), aDay=Math.round(day*1.2), aNoise=Math.round(noiseNear*0.4);
+  let att=aBase+aDay+aNoise; if (S.stage>=3) att=Math.round(att*0.7);
+  const b0=S.barricade;
+  S.barricade-=att;
+  L.push({why:'밤 습격', t:`피해 ${att} = 기본 ${aBase} + ${day}일차 ${aDay} + 낮에 쉘터 20m 안에서 낸 소리 ${aNoise}${S.stage>=3?', 단합 단계라 -30%':''}`, c: att>20?'bad':''});
+  if (aNoise>=3) L.push({why:'밤 습격', t:`쉘터 근처에서 달리거나 알람·고함을 내면 그 소리가 밤 습격을 키운다 (오늘 +${aNoise})`, c:'bad'});
+  if (S.barricade<0){
+    const lost=Math.min(S.survivors, Math.ceil(-S.barricade/10)); S.survivors-=lost; S.barricade=0; S.morale-=12; M.push(['바리케이드 붕괴',-12]);
+    L.push({why:'밤 습격', t:`바리케이드가 버티지 못했다 → ${lost}명을 잃었다`, c:'bad'});
+  }
+  const repair=Math.min(18,3+Math.floor(S.survivors/3))+(S.stage>=1?1:0);
+  const bHit=Math.max(0,S.barricade);
+  S.barricade=clamp(S.barricade+repair,0,100);
+  L.push({why:'바리케이드', t:`${b0} → 습격 후 ${bHit} → 생존자 ${S.survivors}명이 수리 +${repair} → ${S.barricade}`});
+  // Small Win
+  if (isOut('yewon')) L.push({t:'예원이 함께 나가서 오늘은 아침 점호가 없었다'});
+  else if (S.morale>=60 && canSW('yewon')){ useSW('yewon'); S.morale+=2; M.push(['예원의 점호',2]); L.push({why:'Small Win', t:'예원의 아침 점호 (쉘터 사기 60 이상이라 발동) → 쉘터 사기 +2', c:'good'}); }
+  if (talkedToday && canSW('hyun')){ useSW('hyun'); F.nextMorale+=5; L.push({t:'현성이 커피를 내려 줬다: 내일 출발 사기 +5', c:'good'}); }
+  if (day>=3 && canSW('jihwan') && !F.jihwanInjured){ useSW('jihwan'); F.nextReveal+=2; L.push({t:'지환의 지도 그리기: 내일 물건 2개 위치 공개', c:'good'}); }
+  if (F.sujinUp){ F.sujinUp=false; S.morale+=3; M.push(['수진의 용기',3]); L.push({why:'Small Win', t:`수진이 비명을 참아 냈다 (용기 ${F.courage}/3) → 쉘터 사기 +3`, c:'good'}); }
+  if (S.stage>=2){ S.morale+=2; M.push(['결속 모임',2]); L.push({why:'Small Win', t:'체육관 조용한 모임 (결속 보너스) → 쉘터 사기 +2', c:'good'}); }
+  S.morale=clamp(Math.round(S.morale),0,100);
+  L.push({why:'쉘터 사기', t:`${Math.round(B.morale)} → ${S.morale}: ` + M.map(([k,v])=>`${k} ${v>0?'+':''}${v}`).join(', ')});
+  // 회복
+  P.hp=clamp(P.hp+15+(S.stage>=1?5:0),0,100);
+  if (F.jihwanInjured) F.jihwanInjured--;
+  if (F.sujinInjured) F.sujinInjured--;
+  if (F.yewonInjured) F.yewonInjured--;
+  if (F.hyunsungInjured) F.hyunsungInjured--;
+  // 안정 단계
+  S.streak60 = S.morale>=60 ? S.streak60+1 : 0;
+  S.streak65 = S.morale>=65 ? S.streak65+1 : 0;
+  S.streak70 = S.morale>=70 ? S.streak70+1 : 0;
+  const prevStage=S.stage;
+  S.stage = (S.streak70>=3 && !F.infected) ? 3 : S.streak65>=3 ? 2 : S.streak60>=2 ? 1 : 0;
+  if (S.stage>prevStage) L.push({t:`쉘터가 ${STAGES[S.stage]} 단계에 들어섰다: ${STAGE_DESC[S.stage]}`, c:'good'});
+  else if (S.stage<prevStage) L.push({t:`쉘터 분위기가 식었다 (${STAGES[S.stage]} 단계)`, c:'bad'});
+  // 드라마 매니저
+  const foodPct=clamp(S.food/Math.max(1,cons*3)*100,0,100);
+  const TI=Math.round((100-foodPct)*0.3+(100-P.hp)*0.3+(100-S.morale)*0.25+Math.min(100,zombies.length/60*100)*0.15);
+  S.tiHist.push(TI);
+  let tiLabel = TI<=25?'여유':TI<=50?'긴장':TI<=75?'위기':'절체절명';
+  if (TI>=51){ F.cache=true; L.push({t:'구원의 실마리: 내일 쉘터 근처에서 물자를 찾을 수 있을 것 같다', c:'good'}); }
+  if (TI>=76){ P.hp=clamp(P.hp+15,0,100); L.push({t:'예원이 숨겨 둔 구급약을 나눠 줬다: 체력 +15', c:'good'}); }
+  const last3=S.tiHist.slice(-3);
+  if (last3.length===3 && last3.every(v=>v<=25)){ F.horde=true; L.push({t:'멀리서 큰 무리가 학교 쪽으로 움직이는 소리가 들린다', c:'bad'}); S.tiHist=[]; }
+  // 감염
+  let ending=null;
+  if (F.infected){ F.infectDays--; if (F.infectDays<=0) ending='infected'; else L.push({t:`감염 진행 중: ${F.infectDays}일 남았다. 치료제는 보건실이나 과학실에 있다`, c:'bad'}); }
+  if (S.survivors<=0) ending='fallen';
+  if (!ending && day>=MAX_DAY) ending='survive';
+  showReport(L, TI, tiLabel, ending, B);
+}
+function showReport(L, TI, tiLabel, ending, B){
+  const dv=(a,b)=>{ const d=Math.round(b-a); return `${Math.round(a)} → ${Math.round(b)}<span class="delta ${d>0?'up':d<0?'down':''}">${d>0?'+':''}${d}</span>`; };
+  const cells=[['쉘터 인원',dv(B.survivors,S.survivors)],['비축 식량',dv(B.food,S.food)],['바리케이드',dv(B.barricade,S.barricade)],['쉘터 사기',dv(B.morale,S.morale)],['안정 단계',STAGES[S.stage]],['긴장도',`${TI} ${tiLabel}`]];
+  showModal({title:`${day}일차 밤`, html:`<p class="muted">오늘 주운 물건 ${itemsToday}개, 무전기 부품 ${bag.parts}/${S.partsNeeded}</p>
+    <ul class="lines">${L.map(l=>`<li class="${l.c||''}">${l.why?`<span class="why">${l.why}</span>`:''}${l.t}</li>`).join('')}</ul>
+    <p class="muted">오늘 밤 시작 → 지금 (변화)</p>
+    <div class="grid">${cells.map(([k,v])=>`<div class="cell"><small>${k}</small><b>${v}</b></div>`).join('')}</div>`,
+    choices:[{label: ending?'결말 보기':'다음 날 아침으로', primary:true, fn:()=>{ if (ending) gameOver(ending); else { day++; weather = Math.random()<0.55?'clear':Math.random()<0.67?'rain':'heat'; saveGame(); showBrief(); } }}]});
+}
+
+/* ---------- 화면들 ---------- */
+const overlay=$('#overlay');
+function showModal({title, html, choices}){
+  overlay.hidden=false;
+  overlay.innerHTML=`<div class="card"><h2>${title}</h2>${html}<div class="actions">${choices.map((c,i)=>`<button class="btn${c.primary?' primary':''}" data-i="${i}">${c.label}${c.sub?`<small>${c.sub}</small>`:''}</button>`).join('')}</div></div>`;
+  overlay.querySelectorAll('[data-i]').forEach(b=>b.addEventListener('click',()=>{ Sound.play('ui'); choices[+b.dataset.i].fn(); }));
+  const first=overlay.querySelector('.btn'); if (first) first.focus({preventScroll:true}); overlay.scrollTop=0;
+}
+function runnerSVG(){
+  return `<svg viewBox="0 0 100 120" aria-hidden="true"><g fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"><path d="M50 36 L42 66"/><path d="M42 66 L56 82 L52 104"/><path d="M42 66 L30 84 L14 86"/><path d="M48 44 L64 56 L78 50"/><path d="M48 44 L32 50 L24 62"/></g><circle cx="56" cy="20" r="10" fill="#fff"/></svg>`;
+}
+function showTitle(){
+  state='title'; $('#hud').hidden=true; overlay.hidden=false;
+  let best=null; try { best=JSON.parse(localStorage.getItem('lastclass:best')||'null'); } catch(e){}
+  const sv=loadSave();
+  overlay.innerHTML=`<div class="card wide">
+    <div class="sign">${runnerSVG()}<div class="t"><h1>마지막 교실</h1><span>좀비 아포칼립스 생존 시뮬레이션</span></div></div>
+    <div class="title-grid"><div>
+    <div class="cast">${['hyunse','yewon','hyunsung','jihwan','sujin'].map(k=>`<figure><img src="${portrait(k)}" alt=""><figcaption>${CAST[k].name}<small>${CAST[k].role}</small></figcaption></figure>`).join('')}<figure><img src="${portrait('zombie')}" alt=""><figcaption>좀비<small>눈이 멀었다</small></figcaption></figure></div>
+    <p>훈련 중이던 육상 국가대표 상비군 현세는 학교에 고립됐다. 좀비는 앞을 보지 못한다. 대신 소리와 냄새로 사람을 찾고, 5m 안에 들어오면 달려든다.</p>
+    <p>체육관 쉘터를 지키며 생존자를 구하고, 방송실 무전기로 구조 신호를 보내자. 15일을 버티거나 구조대를 부르면 끝난다.</p>
+    ${sv?`<div class="save-box"><b>이어하기 저장: ${sv.day}일차 아침</b><br><span class="muted">인원 ${sv.S.survivors}명 · 비축 식량 ${sv.S.food} · 바리케이드 ${sv.S.barricade} · 부품 ${sv.bag.parts}/${sv.S.partsNeeded}${sv.F.infected?` · 감염 ${sv.F.infectDays}일 남음`:''}</span></div>`:''}
+    ${best?`<p class="muted">최고 기록: ${best.days}일 생존, ${best.ending}</p>`:''}
+    <p class="muted">밤 정산이 끝날 때마다 자동 저장된다. 새로고침해도 그날 아침부터 이어 할 수 있다.</p>
+    <div class="actions">${sv?`<button class="btn primary" id="cont">이어하기 (${sv.day}일차 아침)</button><button class="btn" id="go">새로 시작<small>저장이 지워진다</small></button>`:`<button class="btn primary" id="go">시작하기</button>`}</div>
+    </div><div>
+    <h3>조작</h3>
+    <div class="keys"><kbd>WASD / 방향키</kbd><span>걷기 (발소리 3m, 포만감이 조금씩 찬다)</span>
+    <kbd>Shift</kbd><span>달리기 (빠르지만 발소리 10m, 배고픔)</span>
+    <kbd>C</kbd><span>웅크리기 (발소리 없음, 좀비 감지 거리 3m로 줄어듦)</span>
+    <kbd>E</kbd><span>구조, 대화, 무전, 쉘터에서 하루 마치기 (탐색 ${END_MIN}초 뒤부터)</span>
+    <kbd>Q</kbd><span>횃불 켜고 끄기 (3m 안 좀비가 도망)</span>
+    <kbd>R</kbd><span>알람시계 던지기 (마우스 방향, 15m 소리로 유인)</span>
+    <kbd>F</kbd><span>통조림 먹기</span><kbd>Esc</kbd><span>일시정지, 소리 조절</span><kbd>M</kbd><span>소리 끄기, 켜기</span></div>
+    ${volumeHTML()}
+    <p class="muted">키보드가 있는 PC에서 플레이하세요. 소리가 나니 음량을 확인해 주세요.</p>
+    </div></div></div>`;
+  bindVolume();
+  $('#go').addEventListener('click', ()=>{ Sound.init(); Sound.play('ui'); clearSave(); newGame(); });
+  if (sv) $('#cont').addEventListener('click', ()=>{ Sound.init(); Sound.play('ui'); continueGame(sv); });
+  ($('#cont')||$('#go')).focus({preventScroll:true}); overlay.scrollTop=0;
+}
+function showBrief(){
+  state='brief'; $('#hud').hidden=true; overlay.hidden=false;
+  let choice=null;
+  const jOk=!F.jihwanInjured, sOk=!F.sujinInjured, yOk=!F.yewonInjured, hOk=!F.hyunsungInjured;
+  const cells=[['쉘터 인원',`${S.survivors}/50`],['비축 식량',`${S.food} (하루 ${Math.ceil(S.survivors/5)})`],['바리케이드',S.barricade],['쉘터 사기',S.morale]];
+  overlay.innerHTML=`<div class="card wide">
+    <h2>${day}일차 아침</h2>
+    <p class="muted">날씨 ${WEATHER[weather]}${weather==='rain'?': 소리가 작게 퍼지고 냄새가 빨리 지워진다. 불은 못 피운다':weather==='heat'?': 달리면 배고픔이 1.5배':''}</p>
+    <div class="title-grid"><div>
+    <div class="grid">${cells.map(([k,v])=>`<div class="cell"><small>${k}</small><b>${v}</b></div>`).join('')}</div>
+    <ul class="lines">
+      <li>안정 단계 <b>${STAGES[S.stage]}</b>: ${STAGE_DESC[S.stage]}</li>
+      <li>무전기 부품 ${bag.parts}/${S.partsNeeded}. 모아서 방송실 무전기로 구조 신호를 보내자</li>
+      ${F.infected?`<li class="bad">감염 ${F.infectDays}일 남음. 치료제가 보건실이나 과학실에 있다</li>`:''}
+      <li>체력 ${Math.round(P.hp)}${F.nextHpPenalty?` (밤새 지환을 찾느라 -${F.nextHpPenalty})`:''}</li>
+      ${day>1?'<li class="muted">어젯밤 정산까지 자동 저장됨. 새로고침해도 이 아침부터 이어 할 수 있다</li>':''}
+    </ul>
+    ${day===1?`<h3>첫날 꼭 알아야 할 규칙 세 가지</h3>
+    <ol class="rules">
+      <li><b>좀비는 앞을 못 본다. 5m 안에서 ? 가 뜨면 1초 뒤 ! 로 달려온다</b>벽 뒤로 숨거나 3.5초만 달려서 버티면 지쳐서 멈춘다. 횃불(Q) 3m 안에는 들어오지 못한다.</li>
+      <li><b>물자는 교실 안에 숨어 있어 3m 안에 가야 보인다</b>경비실 현성에게 물으면 위치를 미니맵에 알려 준다. 달리면 배고파지니 평소에는 걷자.</li>
+      <li><b>해 지기 전에 체육관(쉘터)으로 돌아와 E를 누른다</b>나간 지 ${END_MIN}초가 지나야 마칠 수 있다. 밤이 되면 좀비가 빨라진다.</li>
+    </ol>`:''}
+    </div><div>
+    <h3>오늘 함께 갈 사람</h3>
+    <div class="pick">
+      <button class="btn" data-w="" aria-pressed="true"><img src="${portrait('hyunse')}" alt=""><span>혼자 간다<small>가장 조용하다</small></span></button>
+      <button class="btn" data-w="jihwan" ${jOk?'':'disabled'}><img src="${portrait('jihwan')}" alt=""><span>지환<small>${jOk?'좀비의 5m 감지 범위와 위치를 계산해 보여 준다':'다쳐서 쉬는 중'}</small></span></button>
+      <button class="btn" data-w="sujin" ${sOk?'':'disabled'}><img src="${portrait('sujin')}" alt=""><span>수진<small>${sOk?`8m 안의 숨겨진 물건을 찾아낸다. 놀라면 비명 (용기 ${F.courage}/3)`:'다쳐서 쉬는 중'}</small></span></button>
+      <button class="btn" data-w="yewon" ${yOk?'':'disabled'}><img src="${portrait('yewon')}" alt=""><span>예원<small>${yOk?'생존자를 5명까지 이끌고 올 수 있다. 대신 그날 밤 아침 점호가 없다':'다쳐서 쉬는 중'}</small></span></button>
+      <button class="btn" data-w="hyunsung" ${hOk?'':'disabled'}><img src="${portrait('hyunsung')}" alt=""><span>현성<small>${hOk?'숨겨진 물건이 처음부터 전부 보인다. 좀비를 보면 화가 나서 고함을 지른다':'다쳐서 쉬는 중'}</small></span></button>
+    </div>
+    <div class="actions"><button class="btn primary" id="go">탐색 시작</button></div></div></div></div>`;
+  overlay.querySelectorAll('[data-w]').forEach(b=>b.addEventListener('click',()=>{
+    choice=b.dataset.w||null;
+    overlay.querySelectorAll('[data-w]').forEach(x=>x.setAttribute('aria-pressed', x===b?'true':'false'));
+  }));
+  $('#go').addEventListener('click',()=>startDay(choice)); $('#go').focus({preventScroll:true}); overlay.scrollTop=0;
+}
+const ENDINGS = {
+  dead:{t:'쓰러진 스프린터', d:'현세는 끝내 쉘터로 돌아오지 못했다. 체육관 문은 그날 밤 늦게까지 열려 있었다.'},
+  infected:{t:'흑막에 잠기다', d:'사흘째 아침, 현세의 눈앞이 하얗게 꺼졌다. 예원은 체육관 문을 걸어 잠갔다.'},
+  fallen:{t:'쉘터 함락', d:'마지막 바리케이드가 무너졌다. 체육관에는 매트와 이름표만 남았다.'},
+  rescueAll:{t:'모두의 구조', d:'아침 운동장에 헬기가 내려앉았다. 줄을 선 사람들 사이로 현세는 마지막으로 트랙을 한 바퀴 돌았다.'},
+  rescueFew:{t:'남겨진 자들의 구조', d:'구조대는 왔지만 체육관은 생각보다 비어 있었다. 살아남은 사람들은 떠난 이름을 하나씩 불렀다.'},
+  survive:{t:'버텨 낸 학교', d:'보름이 지났다. 구조대는 오지 않았지만, 학교는 더 이상 피난처가 아니라 마을이 되었다.'}
+};
+function gameOver(kind){
+  state='ending'; $('#hud').hidden=true;
+  const e=ENDINGS[kind];
+  clearSave();
+  Sound.play(kind==='rescueAll'||kind==='rescueFew'||kind==='survive'?'win':'end');
+  const trace = S.keep>S.abandon ? '이 쉘터는 끝까지 사람을 지킨 곳으로 기억된다.' : S.abandon>S.keep ? '살아남았지만, 문을 닫았던 밤들도 함께 기억된다.' : '지킨 날과 버린 날이 함께 남았다.';
+  try {
+    const prev=JSON.parse(localStorage.getItem('lastclass:best')||'null');
+    if (!prev || day>prev.days) localStorage.setItem('lastclass:best', JSON.stringify({days:day, ending:e.t}));
+  } catch(err){}
+  showModal({title:e.t, html:`<p>${e.d}</p><p>${trace}</p>
+    <div class="grid"><div class="cell"><small>버틴 날</small><b>${day}일</b></div><div class="cell"><small>쉘터 인원</small><b>${S.survivors}명</b></div><div class="cell"><small>최대 인원</small><b>${S.peak}명</b></div><div class="cell"><small>지킨 결정 / 버린 결정</small><b>${S.keep} / ${S.abandon}</b></div></div>`,
+    choices:[{label:'처음부터 다시', primary:true, fn:showTitle}]});
+}
+function pause(){
+  if (state!=='play') return;
+  state='pause';
+  showModal({title:'일시정지', html:`<div class="keys"><kbd>WASD</kbd><span>걷기</span><kbd>Shift</kbd><span>달리기</span><kbd>C</kbd><span>웅크리기</span><kbd>E</kbd><span>상호작용</span><kbd>Q</kbd><span>횃불</span><kbd>R</kbd><span>알람시계 던지기</span><kbd>F</kbd><span>통조림 먹기</span></div>
+    <p class="muted">좀비 머리 위 ? 는 냄새를 맡는 중, ! 는 돌진 중이다. 좀비는 3.5초 넘게 달리면 지쳐서 멈춘다. 벽 뒤에 숨으면 소리와 냄새가 막힌다.</p>${volumeHTML()}`,
+    choices:[{label:'계속하기', primary:true, fn:resume},{label:'타이틀로', fn:showTitle}]});
+  bindVolume();
+}
+function volumeHTML(){
+  const v=Sound.vol();
+  const row=(k,l)=>`<label class="vol"><span>${l}</span><input type="range" min="0" max="100" step="5" value="${v[k]}" data-vol="${k}" aria-label="${l} 음량"><output>${v[k]}</output></label>`;
+  return `<h3>소리</h3>${row('master','전체')}${row('music','배경음')}${row('sfx','효과음')}<label class="check"><input type="checkbox" data-mute ${v.muted?'checked':''}> 소리 끄기 (M)</label>`;
+}
+function bindVolume(){
+  overlay.querySelectorAll('[data-vol]').forEach(inp=>{
+    inp.addEventListener('input',()=>{ Sound.set(inp.dataset.vol,+inp.value); const o=inp.parentNode && inp.parentNode.querySelector('output'); if (o) o.textContent=inp.value; });
+    inp.addEventListener('change',()=>{ Sound.init(); Sound.play(inp.dataset.vol==='music'?'dawn':'pickup'); });
+  });
+  const m=overlay.querySelector('[data-mute]');
+  if (m) m.addEventListener('change',()=>{ Sound.init(); Sound.set('muted',m.checked); });
+}
+function resume(){ state='play'; overlay.hidden=true; $('#hud').hidden=false; for (const k in keys) keys[k]=false; }
+
+/* ---------- 토스트 / HUD ---------- */
+function toast(msg, tone){
+  const box=$('#toasts'); const el=document.createElement('div');
+  el.className='toast'+(tone?' '+tone:''); el.textContent=msg; box.appendChild(el);
+  while (box.children.length>3) box.removeChild(box.firstChild);
+  setTimeout(()=>{ el.style.opacity='0'; setTimeout(()=>el.remove(),450); }, 3200);
+}
+function hintOnce(k,msg,tone){ if (F.hint[k]) return; F.hint[k]=1; toast(msg,tone); }
+function updateHUD(){
+  const set=(id,v)=>{ $('#b-'+id).style.width=v+'%'; $('#v-'+id).textContent=Math.round(v); };
+  set('hp',P.hp); set('food',P.hunger); set('mor',P.morale);
+  const modeName={walk:'걷기',run:'달리기',crouch:'웅크리기'}[P.mode];
+  $('#m-mode').innerHTML=`<b>${P.inShelter?'쉘터 안':modeName}</b>${P.inWater?' (물속)':''}`;
+  $('#m-speed').textContent=`이동속도 ${Math.round(moraleMult(P.morale)*100)}%`;
+  $('#c-day').textContent=`${day}일차 ${night?'밤':'낮'}`;
+  $('#b-time').style.width=(night?100:dayTime/DAY_LEN*100)+'%';
+  $('#c-sub').textContent = night ? '쉘터로 돌아가면 하루가 끝난다' : `${WEATHER[weather]}, 해 지기까지 ${Math.max(0,Math.ceil(DAY_LEN-dayTime))}초` + (dayTime>END_MIN ? ' · 쉘터에서 E로 마치기 가능' : ` · ${Math.ceil(END_MIN-dayTime)}초 뒤 귀환 가능`);
+  const chips=[
+    `<span class="chip"><kbd>F</kbd>통조림 ${bag.can}</span>`,
+    `<span class="chip"><kbd>R</kbd>알람 ${bag.alarms}</span>`,
+    `<span class="chip${P.torchLit?' good':''}"><kbd>Q</kbd>횃불 ${Math.ceil(bag.fuel)}초</span>`,
+    `<span class="chip">부품 ${bag.parts}/${S.partsNeeded}</span>`
+  ];
+  if (bag.wood) chips.push(`<span class="chip">자재 ${bag.wood}</span>`);
+  if (bag.shoes) chips.push(`<span class="chip">운동화</span>`);
+  if (bag.perfumeT>0) chips.push(`<span class="chip good">향수 ${Math.ceil(bag.perfumeT)}초</span>`);
+  if (companion) chips.push(`<span class="chip">동행 ${companion.name}</span>`);
+  if (followers.length) chips.push(`<span class="chip">따라오는 생존자 ${followers.length}/${maxFollowers()}</span>`);
+  if (F.infected) chips.push(`<span class="chip warn">감염 D-${F.infectDays}</span>`);
+  $('#bag').innerHTML=chips.join('');
+}
+
+/* ---------- 렌더 ---------- */
+const cv=$('#world'), ctx=cv.getContext('2d');
+const mm=$('#minimap'), mctx=mm.getContext('2d');
+let VW=0, VH=0, DPR=1, SCALE=1;
+function resize(){
+  DPR=Math.min(2,window.devicePixelRatio||1);
+  VW=cv.clientWidth; VH=cv.clientHeight;
+  cv.width=Math.round(VW*DPR); cv.height=Math.round(VH*DPR);
+  SCALE=clamp(Math.min(VW/(20*TILE), VH/(13*TILE)), 0.55, 1.5);
+}
+function screenToWorld(sx,sy){ return {x:sx/SCALE+cam.x, y:sy/SCALE+cam.y}; }
+function drawFigure(x,y,color,phase,face,kind){
+  ctx.save(); ctx.translate(x,y);
+  ctx.fillStyle='rgba(20,30,35,.16)'; ctx.beginPath(); ctx.ellipse(0,9,9,3.5,0,0,Math.PI*2); ctx.fill();
+  if (face<0) ctx.scale(-1,1);
+  if (kind==='crouch'){ ctx.translate(0,5); ctx.scale(1.05,0.72); }
+  ctx.strokeStyle=color; ctx.fillStyle=color; ctx.lineCap='round'; ctx.lineJoin='round';
+  const s=Math.sin(phase), lean = kind==='run'?4: kind==='zombie'?2.5:1;
+  ctx.lineWidth=4.4; ctx.beginPath(); ctx.moveTo(lean,-13); ctx.lineTo(0,-2); ctx.stroke();
+  const L = kind==='run'?7.5:4.5; ctx.lineWidth=3.6;
+  ctx.beginPath(); ctx.moveTo(0,-2); ctx.lineTo(-L*s*0.6,3); ctx.lineTo(-L*s,9); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0,-2); ctx.lineTo(L*s*0.6,3); ctx.lineTo(L*s,9); ctx.stroke();
+  ctx.lineWidth=3.2;
+  if (kind==='zombie'){
+    ctx.beginPath(); ctx.moveTo(lean*.8,-11); ctx.lineTo(10,-11+s); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(lean*.8,-10); ctx.lineTo(9,-8-s); ctx.stroke();
+  } else {
+    const A = kind==='run'?7:4;
+    ctx.beginPath(); ctx.moveTo(lean*.8,-11); ctx.lineTo(A*s*.7+1,-6); ctx.lineTo(A*s+2,-2); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(lean*.8,-11); ctx.lineTo(-A*s*.7+1,-6); ctx.lineTo(-A*s,-3); ctx.stroke();
+  }
+  ctx.beginPath(); ctx.arc(lean+1.5,-18.5,4.6,0,Math.PI*2); ctx.fill();
+  ctx.restore();
+}
+function drawSprite(key,x,y,phase,face,mode,moving){
+  const fr=SPR[key]; if (!fr) return;
+  const f = moving ? (Math.floor(phase/Math.PI)%2===0?1:2) : 0;
+  ctx.save(); ctx.translate(x,y);
+  ctx.fillStyle='rgba(20,30,35,.18)'; ctx.beginPath(); ctx.ellipse(0,8,10,3.6,0,0,Math.PI*2); ctx.fill();
+  if (face<0) ctx.scale(-1,1);
+  if (moving && (mode==='run'||mode==='charge')) ctx.rotate(0.13);
+  if (mode==='crouch'){ ctx.translate(0,3); ctx.scale(1.06,0.76); }
+  const bob = moving ? -Math.abs(Math.sin(phase))*1.6 : 0;
+  if (fr[f] && fr[f].complete !== false) ctx.drawImage(fr[f],-18,-38+bob,36,48);
+  ctx.restore();
+}
+function tag(x,y,text,color){
+  ctx.font='700 11px "IBM Plex Sans KR", sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  const w=ctx.measureText(text).width+10;
+  ctx.fillStyle=color; roundRect(ctx,x-w/2,y-8,w,16,3); ctx.fill();
+  ctx.fillStyle='#fff'; ctx.fillText(text,x,y+0.5);
+}
+function render(){
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  ctx.fillStyle='#C9D3D6'; ctx.fillRect(0,0,VW,VH);
+  if (!mapCanvas || !P || state==='title') { drawTitleBackdrop(); return; }
+  const vw=VW/SCALE, vh=VH/SCALE;
+  cam.x = W*TILE<=vw ? (W*TILE-vw)/2 : clamp(P.x-vw/2, 0, W*TILE-vw);
+  cam.y = H*TILE<=vh ? (H*TILE-vh)/2 : clamp(P.y-vh/2, 0, H*TILE-vh);
+  ctx.setTransform(DPR*SCALE,0,0,DPR*SCALE,-cam.x*DPR*SCALE,-cam.y*DPR*SCALE);
+  ctx.drawImage(mapCanvas,0,0);
+  // 냄새 흔적
+  const life=weather==='rain'?8:20;
+  for (const c of crumbs){ const a=1-(gameTime-c.t)/life; ctx.fillStyle=`rgba(154,91,192,${0.28*a})`; ctx.beginPath(); ctx.arc(c.x,c.y+6,3,0,Math.PI*2); ctx.fill(); }
+  // 소리 파동
+  ctx.setLineDash([7,6]);
+  for (const n of noises){
+    const k=Math.min(1,n.t/0.25), a=1-n.t/1.1;
+    ctx.strokeStyle = n.kind==='scream'||n.kind==='yell' ? `rgba(216,50,43,${a})` : n.kind==='alarm' ? `rgba(47,111,179,${a})` : n.kind==='run' ? `rgba(240,140,0,${a*0.8})` : `rgba(34,51,58,${a*0.5})`;
+    ctx.lineWidth=2; ctx.beginPath(); ctx.arc(n.x,n.y,n.r*k,0,Math.PI*2); ctx.stroke();
+  }
+  ctx.setLineDash([]);
+  // 아이템
+  const seeR = companion && companion.who==='sujin' ? 8*TILE : 3*TILE;
+  for (const it of items){
+    const d=dist(it,P);
+    if (!(it.revealed || d<seeR)) continue;
+    const def=ITEMS[it.type], b=Math.sin(gameTime*3+it.bob)*2;
+    ctx.save(); ctx.translate(it.x,it.y+b);
+    ctx.strokeStyle=def.color; ctx.lineWidth=1.5; ctx.globalAlpha=0.5+0.5*Math.sin(gameTime*4+it.bob);
+    ctx.beginPath(); ctx.arc(0,0,14,0,Math.PI*2); ctx.stroke(); ctx.globalAlpha=1;
+    ctx.fillStyle=def.color; ctx.beginPath(); ctx.moveTo(0,-10); ctx.lineTo(10,0); ctx.lineTo(0,10); ctx.lineTo(-10,0); ctx.closePath(); ctx.fill();
+    ctx.fillStyle='#fff'; ctx.font='700 11px "IBM Plex Sans KR", sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(def.glyph,0,0.5);
+    ctx.restore();
+  }
+  // 무전기, 경비실
+  ctx.fillStyle=PAL.ink; roundRect(ctx,RADIO.x-12,RADIO.y-9,24,18,3); ctx.fill();
+  ctx.strokeStyle=PAL.ink; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(RADIO.x+6,RADIO.y-9); ctx.lineTo(RADIO.x+10,RADIO.y-22); ctx.stroke();
+  ctx.fillStyle=bag.parts>=S.partsNeeded?PAL.exit:'#E77B77'; ctx.beginPath(); ctx.arc(RADIO.x-5,RADIO.y,3,0,Math.PI*2); ctx.fill();
+  // 횃불 범위
+  if (P.torchLit){
+    const fl=1+Math.sin(gameTime*18)*0.03;
+    ctx.fillStyle='rgba(240,140,0,.10)'; ctx.beginPath(); ctx.arc(P.x,P.y,3*TILE*fl,0,Math.PI*2); ctx.fill();
+    ctx.setLineDash([5,5]); ctx.strokeStyle='rgba(240,140,0,.75)'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(P.x,P.y,3*TILE,0,Math.PI*2); ctx.stroke(); ctx.setLineDash([]);
+  }
+  // 알람
+  for (const o of thrown){ ctx.fillStyle=PAL.survivor; ctx.beginPath(); ctx.arc(o.x,o.y-Math.sin(Math.min(1,o.t/0.45)*Math.PI)*24,5,0,Math.PI*2); ctx.fill(); }
+  for (const a of alarms){ const ringing=a.t<8, sh=ringing?Math.sin(gameTime*40)*2:0; ctx.fillStyle=PAL.survivor; ctx.beginPath(); ctx.arc(a.x+sh,a.y,7,0,Math.PI*2); ctx.fill(); ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(a.x+sh,a.y,4,0,Math.PI*2); ctx.fill(); if (ringing) tag(a.x,a.y-18,'따르륵',PAL.survivor); }
+  // 지환: 감지 범위 표시
+  if (companion && companion.who==='jihwan'){
+    ctx.setLineDash([4,6]); ctx.lineWidth=1.5;
+    for (const z of zombies){ if (dist(z,P)<14*TILE){ ctx.strokeStyle='rgba(216,50,43,.45)'; ctx.beginPath(); ctx.arc(z.x,z.y,(P.mode==='crouch'?3:5)*TILE,0,Math.PI*2); ctx.stroke(); } }
+    ctx.setLineDash([]);
+  }
+  // 인물들 (y 정렬)
+  const figs=[];
+  for (const z of zombies) figs.push({y:z.y, f:()=>{ drawSprite('z'+z.look,z.x,z.y,z.phase,z.face,z.state==='charge'?'charge':'walk', z.stun<=0 && z.state!=='sniff');
+    if (z.state==='sniff') tag(z.x,z.y-48,'?','#C08A00'); else if (z.state==='charge') tag(z.x,z.y-48,'!',PAL.zombie); else if (z.state==='flee') tag(z.x,z.y-48,'불!',PAL.fire); else if (z.tiredT>0) tag(z.x,z.y-48,'헉헉','#73858D'); else if (z.state==='investigate' && z.lure) tag(z.x,z.y-48,'♪',PAL.survivor); }});
+  for (const s of survivors) figs.push({y:s.y, f:()=>{ drawSprite('s'+s.look,s.x,s.y,0,s.face,'crouch',false); if (dist(s,P)<6*TILE) tag(s.x,s.y-44,'생존자',PAL.survivor); }});
+  for (const f of followers) figs.push({y:f.y, f:()=>drawSprite('s'+f.look,f.x,f.y,f.phase,f.face,P.mode==='run'?'run':'walk',P.moving)});
+  if (companion){ const c=companion; figs.push({y:c.y, f:()=>{ drawSprite(c.who,c.x,c.y,c.phase,c.face,P.mode==='run'?'run':'walk',P.moving); tag(c.x,c.y-48,c.name,'#1D5E9E'); }}); }
+  if (!isOut('hyunsung')) figs.push({y:GUARD.y, f:()=>{ drawSprite('hyunsung',GUARD.x,GUARD.y,0,-1,'walk',false); tag(GUARD.x,GUARD.y-48,'현성','#5A6A71'); }});
+  if (!isOut('yewon')) figs.push({y:YEWON.y, f:()=>{ drawSprite('yewon',YEWON.x,YEWON.y,0,1,'walk',false); tag(YEWON.x,YEWON.y-48,'예원',PAL.exit); }});
+  figs.push({y:P.y, f:()=>{
+    ctx.strokeStyle=PAL.exit; ctx.lineWidth=2; ctx.beginPath(); ctx.ellipse(P.x,P.y+8,15,5.5,0,0,Math.PI*2); ctx.stroke();
+    if (P.invuln>0 && Math.floor(gameTime*20)%2) return;
+    drawSprite('hyunse',P.x,P.y,P.phase,P.face,P.mode,P.moving);
+  }});
+  figs.sort((a,b)=>a.y-b.y).forEach(o=>o.f());
+  // 상호작용 안내
+  const it=interactTarget();
+  if (it && state==='play'){
+    ctx.font='700 13px "IBM Plex Sans KR", sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    const w=ctx.measureText(it.label).width+18, x=it.obj===P?P.x:it.obj.x, y=(it.obj===P?P.y:it.obj.y)-64;
+    ctx.fillStyle=PAL.ink; roundRect(ctx,x-w/2,y-12,w,24,4); ctx.fill(); ctx.fillStyle='#fff'; ctx.fillText(it.label,x,y+0.5);
+  }
+  // 화면 공간 효과
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  const dusk = night ? 0.8 : dayTime>DAY_LEN-20 ? (dayTime-(DAY_LEN-20))/20*0.55 : 0;
+  if (dusk>0){
+    const sx=(P.x-cam.x)*SCALE, sy=(P.y-cam.y)*SCALE, R=(P.torchLit?7.5:5)*TILE*SCALE;
+    const g=ctx.createRadialGradient(sx,sy,R*0.3,sx,sy,R);
+    g.addColorStop(0,'rgba(8,16,24,0)'); g.addColorStop(1,`rgba(8,16,24,${dusk})`);
+    ctx.fillStyle=g; ctx.fillRect(0,0,VW,VH);
+  }
+  if (weather==='rain'){
+    ctx.strokeStyle='rgba(70,110,140,.35)'; ctx.lineWidth=1;
+    ctx.beginPath();
+    for (let i=0;i<90;i++){ const x=((i*137.5+gameTime*240)%(VW+60))-30, y=((i*89.3+gameTime*620)%(VH+40))-20; ctx.moveTo(x,y); ctx.lineTo(x-5,y+14); }
+    ctx.stroke();
+  }
+  if (flashT>0){ ctx.fillStyle=`rgba(216,50,43,${flashT})`; ctx.fillRect(0,0,VW,VH); }
+  drawMinimap();
+}
+const MINI_LABELS=[['쉘터',12.5,10.5,1],['경비실',21.5,33.8],['연못',8,37],['운동장',10,24.5],['방송실',57.5,7.5],['과학실',48.5,8],['보건실',30,16],['창고',57,16],['급식실',34,27],['도서관',52.5,27],['교무실',30,35],['화장실',47,35]];
+function drawMinimap(){
+  if ($('#hud').hidden || !miniBase) return;
+  const K=240/W, mx=v=>v/TILE*K;
+  mctx.setTransform(1,0,0,1,0,0); mctx.imageSmoothingEnabled=false;
+  mctx.drawImage(miniBase,0,0,mm.width,mm.height);
+  mctx.setTransform(mm.width/240,0,0,mm.width/240,0,0);
+  // 장소 이름
+  mctx.textAlign='center'; mctx.textBaseline='middle'; mctx.lineJoin='round';
+  for (const [label,tx,ty,strong] of MINI_LABELS){
+    mctx.font=(strong?'700 11px ':'600 9px ')+'"IBM Plex Sans KR", sans-serif';
+    mctx.strokeStyle='rgba(255,255,255,.92)'; mctx.lineWidth=3; mctx.strokeText(label,tx*K,ty*K);
+    mctx.fillStyle=strong?'#00813F':'#22333A'; mctx.fillText(label,tx*K,ty*K);
+  }
+  for (const it of items) if (it.revealed){ mctx.fillStyle=ITEMS[it.type].color; mctx.fillRect(mx(it.x)-2,mx(it.y)-2,4,4); }
+  if (companion && companion.who==='jihwan'){ mctx.fillStyle=PAL.zombie; for (const z of zombies) mctx.fillRect(mx(z.x)-1.5,mx(z.y)-1.5,3,3); }
+  mctx.fillStyle=bag.parts>=S.partsNeeded?PAL.exit:PAL.ink; mctx.fillRect(mx(RADIO.x)-3,mx(RADIO.y)+4,6,6);
+  mctx.fillStyle=PAL.survivor; for (const f of followers) mctx.fillRect(mx(f.x)-1.5,mx(f.y)-1.5,3,3);
+  mctx.fillStyle=PAL.exit; mctx.strokeStyle='#fff'; mctx.lineWidth=1.5;
+  mctx.beginPath(); mctx.arc(mx(P.x),mx(P.y),4,0,Math.PI*2); mctx.fill(); mctx.stroke();
+}
+function drawTitleBackdrop(){
+  if (!mapCanvas) return;
+  const s=Math.max(VW/(W*TILE), VH/(H*TILE));
+  ctx.setTransform(DPR*s,0,0,DPR*s,0,0); ctx.globalAlpha=0.9; ctx.drawImage(mapCanvas,0,0); ctx.globalAlpha=1;
+}
+
+/* ---------- 입력 ---------- */
+window.addEventListener('keydown', e=>{
+  Sound.init();
+  if (e.code==='KeyM' && !e.repeat){
+    Sound.set('muted',!Sound.vol().muted);
+    if (state==='play') toast(Sound.vol().muted?'소리를 껐다 (M)':'소리를 켰다 (M)');
+    const m=overlay.querySelector('[data-mute]'); if (m) m.checked=Sound.vol().muted;
+    return;
+  }
+  if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code)) e.preventDefault();
+  if (e.code==='Escape'){ if (state==='play') pause(); else if (state==='pause') resume(); return; }
+  if (state!=='play') return;
+  keys[e.code]=true;
+  if (e.repeat) return;
+  if (e.code==='KeyE') interact();
+  else if (e.code==='KeyF') eatCan();
+  else if (e.code==='KeyQ') toggleTorch();
+  else if (e.code==='KeyR') throwAlarm();
+});
+window.addEventListener('keyup', e=>{ keys[e.code]=false; });
+window.addEventListener('blur', ()=>{ for (const k in keys) keys[k]=false; pause(); });
+cv.addEventListener('mousemove', e=>{ const r=cv.getBoundingClientRect(); mouse.x=e.clientX-r.left; mouse.y=e.clientY-r.top; mouse.moved=true; });
+window.addEventListener('resize', resize);
+window.addEventListener('pointerdown', ()=>Sound.init());
+
+/* ---------- 루프 ---------- */
+let lastT=performance.now();
+function loop(now){
+  const dt=Math.min(0.05,(now-lastT)/1000); lastT=now;
+  if (state==='play'){ update(dt); hudT-=dt; if (hudT<=0 && state==='play'){ hudT=0.1; updateHUD(); } }
+  Sound.tick(dt,{night, danger:state==='play'?dangerLevel:0, torch:state==='play'&&!!P&&P.torchLit, rain:state==='play'&&weather==='rain'});
+  render();
+  requestAnimationFrame(loop);
+}
+buildMap();
+resize();
+const boot=()=>{ renderStatic(); showTitle(); };
+Promise.all([document.fonts && document.fonts.ready ? Promise.race([document.fonts.ready, new Promise(r=>setTimeout(r,1500))]) : Promise.resolve(), loadSprites()]).then(boot);
+requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

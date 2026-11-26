@@ -3,17 +3,17 @@
 신구대학교 게임콘텐츠과 기말 작업 · 2023137046 이준해
 
 - 웹페이지: https://junhae0.github.io/ZombieGame/
-- 게임 바로가기: https://junhae0.github.io/ZombieGame/game/
-- 시스템 기획서: https://junhae0.github.io/ZombieGame/docs/system-design.pdf
+- 게임 바로가기: https://junhae0.github.io/ZombieGame/game.html
+- 시스템 기획서: https://junhae0.github.io/ZombieGame/system-design.pdf
 
-## 폴더 구성
+## 파일 구성
 
-| 경로 | 내용 |
+| 파일 | 내용 |
 | --- | --- |
 | `index.html` | 디오라마와 게임을 묶은 첫 화면 |
-| `game/index.html` | 마지막 교실 웹게임 (HTML 한 파일) |
-| `diorama/` | 디오라마 작업 (파일을 넣어 자리 표시용 파일을 덮어쓰기) |
-| `docs/system-design.pdf` | 시스템 기획서 v1.3 (PDF) |
+| `game.html` | 마지막 교실 웹게임 (HTML 한 파일) |
+| `diorama.html` | Treasure Reef 디오라마 |
+| `system-design.pdf` | 시스템 기획서 v1.3 |
 
 ## 조작
 
@@ -26,9 +26,6 @@ WASD 이동 · Shift 달리기 · C 웅크리기 · E 구조·대화·무전·�
 3. **밤 결과의 이유**: 밤 정산의 모든 줄에 원인 태그([감염], [밤 습격] 등)와 계산 과정 표시. 인원·식량·바리케이드·사기를 "시작 → 결과 (변화)"로 비교.
 4. **1366×768 화면**: 타이틀과 아침 화면을 2단으로 바꿔 제목과 시작 버튼이 스크롤 없이 보이게 수정.
 
-## GitHub Pages로 올리기
+## GitHub Pages
 
-1. 저장소: https://github.com/junhae0/ZombieGame (Public)
-2. **Add file → Upload files**로 이 폴더 안의 파일과 폴더를 모두 끌어다 놓고 **Commit changes**.
-3. 저장소 **Settings → Pages** → Source를 **Deploy from a branch**, Branch를 **main / (root)**로 두고 Save.
-4. 1~2분 뒤 https://junhae0.github.io/ZombieGame/ 이 열리면 이 주소를 제출.
+저장소 Settings → Pages에서 Source를 Deploy from a branch, Branch를 main / (root)로 설정. 주소: https://junhae0.github.io/ZombieGame/
