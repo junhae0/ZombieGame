@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>이준해 · 게임콘텐츠과 기말 작업</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--paper:#E2E9EC;--panel:#F6F9F9;--ink:#1E2D34;--muted:#5A6A71;--exit:#00A651;--exit-deep:#00813F;--on-exit:#fff;color-scheme:light}
+@media (prefers-color-scheme: dark){:root{--paper:#0E191E;--panel:#15232A;--ink:#E1EAED;--muted:#93A5AC;--exit:#16B862;--exit-deep:#0E8F4B;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;line-height:1.6}
+main{max-width:1040px;margin:0 auto;padding:48px 20px 64px}
+h1{font-family:"Black Han Sans","IBM Plex Sans KR",sans-serif;font-weight:400;font-size:clamp(34px,6vw,52px);line-height:1.1;margin:0 0 8px}
+.lead{color:var(--muted);margin:0 0 36px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:22px}
+.card{background:var(--panel);border:2px solid var(--ink);border-radius:8px;box-shadow:5px 5px 0 var(--ink);padding:24px;display:flex;flex-direction:column}
+.tag{align-self:flex-start;font-size:12.5px;font-weight:700;border:1.5px solid var(--ink);border-radius:3px;padding:1px 8px;margin-bottom:12px}
+.card h2{font-family:"Black Han Sans","IBM Plex Sans KR",sans-serif;font-weight:400;font-size:30px;margin:0 0 8px}
+.card p{margin:0 0 18px;flex:1}
+.btns{display:flex;gap:10px;flex-wrap:wrap}
+a.btn{display:inline-block;text-decoration:none;color:var(--ink);font-weight:700;border:2px solid var(--ink);border-radius:5px;padding:9px 16px;box-shadow:3px 3px 0 var(--ink);background:var(--panel)}
+a.btn.primary{background:var(--exit);color:var(--on-exit)}
+a.btn:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+footer{margin-top:40px;color:var(--muted);font-size:14px}
+</style>
+</head>
+<body>
+<main>
+  <h1>게임콘텐츠과 기말 작업</h1>
+  <p class="lead">2023137046 이준해</p>
+  <div class="grid">
+    <section class="card">
+      <span class="tag">작업 1</span>
+      <h2>디오라마</h2>
+      <p>디오라마 작업 소개를 여기에 적어 주세요.</p>
+      <div class="btns"><a class="btn primary" href="diorama/">디오라마 보기</a></div>
+    </section>
+    <section class="card">
+      <span class="tag">작업 2</span>
+      <h2>마지막 교실</h2>
+      <p>눈먼 좀비가 가득한 학교에서, 육상 상비군 현세가 체육관 쉘터를 지키며 15일을 버티는 좀비 아포칼립스 생존 웹게임. 키보드가 있는 PC에서 플레이하세요.</p>
+      <div class="btns">
+        <a class="btn primary" href="game/">게임 플레이</a>
+        <a class="btn" href="docs/system-design.pdf">시스템 기획서</a>
+      </div>
+    </section>
+  </div>
+  <footer>신구대학교 게임콘텐츠과</footer>
+</main>
+</body>
+</html>
